@@ -1,0 +1,2438 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>我的替身 · 办公室</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif; }
+  .bg { position: fixed; inset: 0; }
+  #bgDay { background: radial-gradient(ellipse at 50% 35%, #e3f1fb 0%, #b5d3ee 45%, #7fa9d6 100%); }
+  #bgNight { background: radial-gradient(ellipse at 50% 35%, #232a55 0%, #101430 50%, #05060f 100%); opacity: 0; }
+  canvas#c { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  .ui { position: fixed; z-index: 5; color: #16324a; transition: color .6s; user-select: none; }
+  body.night .ui { color: #dfe9ff; }
+  .glass { background: rgba(255,255,255,.55); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.65); }
+  body.night .glass { background: rgba(40,55,110,.55); border-color: rgba(140,170,255,.35); }
+  #title { top: 16px; left: 20px; width: 240px; }
+  #title h1 { margin: 0; font-size: 20px; letter-spacing: 2px; font-weight: 600; }
+  #status { margin-top: 8px; display: inline-block; padding: 6px 14px; border-radius: 999px; font-size: 14px; }
+  #hud { margin-top: 8px; padding: 10px 12px; border-radius: 14px; font-size: 12px; }
+  #hud .row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  #hud .row span { width: 108px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .barw { flex: 1; height: 8px; border-radius: 4px; background: rgba(0,40,90,.15); overflow: hidden; }
+  body.night .barw { background: rgba(255,255,255,.15); }
+  .barw i { display: block; height: 100%; width: 50%; border-radius: 4px; transition: width .25s, background .4s; }
+  #bEnergy { background: #ffb238; } #bMood { background: #ff6b9a; } #bProg { background: #38c8a0; }
+  #score, #stats { opacity: .85; } #stats { margin-bottom: 4px; }
+  #focus { margin-top: 8px; padding: 12px; border-radius: 14px; text-align: center; }
+  #fLabel { font-size: 12px; opacity: .8; }
+  #fTime { font-size: 34px; font-weight: 700; letter-spacing: 2px; font-variant-numeric: tabular-nums; margin: 2px 0 6px; }
+  #fDur, #fBtns { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+  #fDur button { padding: 4px 9px; font-size: 12px; border-radius: 999px; }
+  #fBtns { margin-top: 8px; } #fBtns button { padding: 6px 14px; font-size: 13px; }
+  button.primary, body.night button.primary { background: #3aa0ff; color: #fff; border-color: #3aa0ff; }
+  button.primary:hover, body.night button.primary:hover { background: #2289ee; }
+  #bar.locked button:not(.ok) { opacity: .35; }
+  #shop { position: fixed; inset: 0; z-index: 8; display: none; align-items: center; justify-content: center; background: rgba(10,20,40,.35); }
+  #shop.open { display: flex; }
+  #shopBox { width: min(440px, 92vw); max-height: 86vh; overflow: auto; border-radius: 18px; padding: 18px 20px; background: rgba(255,255,255,.94); color: #16324a; box-sizing: border-box; }
+  body.night #shopBox { background: rgba(28,36,72,.96); color: #dfe9ff; }
+  #shopHead { display: flex; justify-content: space-between; align-items: center; font-size: 17px; }
+  .sec { margin: 14px 0 6px; font-size: 13px; opacity: .75; }
+  .items { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+  .item { padding: 10px 6px; border-radius: 12px; text-align: center; font-size: 13px; cursor: pointer; border: 2px solid transparent; background: rgba(0,60,120,.08); user-select: none; }
+  body.night .item { background: rgba(255,255,255,.08); }
+  .item.on { border-color: #3aa0ff; } .item.locked { opacity: .65; }
+  .item .ic { font-size: 24px; display: block; height: 32px; line-height: 32px; } .item small { display: block; opacity: .75; margin-top: 2px; }
+  .sw { width: 26px; height: 26px; border-radius: 50%; display: inline-block; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.15); vertical-align: middle; }
+  #fishRow { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  #fishVal { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  #comboVal { font-size: 14px; font-weight: 700; color: #ff5d7a; }
+  #startP { margin-top: 8px; padding: 12px; border-radius: 14px; text-align: center; font-size: 12px; }
+  #startP button { margin: 8px 0; padding: 9px 22px; font-size: 15px; }
+  #rules { text-align: left; line-height: 1.7; opacity: .85; }
+  #alert { top: 64px; left: 50%; transform: translateX(-50%); padding: 10px 18px; border-radius: 14px; background: rgba(30,40,70,.85); color: #fff !important;
+    font-size: 16px; text-align: center; opacity: 0; transition: opacity .15s; pointer-events: none; min-width: 250px; }
+  #alert.danger { background: rgba(225,45,70,.92); }
+  #alert .barw { margin-top: 7px; background: rgba(255,255,255,.3); } #alert .barw i { background: #fff; transition: none; }
+  #toast { top: 128px; left: 50%; transform: translateX(-50%); padding: 7px 16px; border-radius: 999px; background: rgba(255,255,255,.9); color: #16324a !important;
+    font-size: 14px; opacity: 0; transition: opacity .3s; pointer-events: none; white-space: nowrap; }
+  #vig { position: fixed; inset: 0; z-index: 4; pointer-events: none; opacity: 0; box-shadow: inset 0 0 140px 30px rgba(255,40,70,.75); }
+  #bar button small { opacity: .7; margin-left: 2px; }
+  #card { position: fixed; inset: 0; z-index: 8; display: none; align-items: center; justify-content: center; background: rgba(10,20,40,.4); }
+  #card.open { display: flex; }
+  #cardBox { width: min(360px, 90vw); border-radius: 20px; padding: 22px 24px; background: rgba(255,255,255,.95); color: #16324a; text-align: center; box-sizing: border-box; }
+  body.night #cardBox { background: rgba(28,36,72,.96); color: #dfe9ff; }
+  #cGrade { font-size: 64px; font-weight: 800; line-height: 1; color: #3aa0ff; }
+  #cTitle { font-size: 20px; font-weight: 700; margin: 6px 0 14px; }
+  #cRows div { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; font-size: 14px; border-bottom: 1px dashed rgba(0,60,120,.15); text-align: right; }
+  #cRows div span:first-child { white-space: nowrap; }
+  #cBtns { margin-top: 16px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  #stressTxt, #doneTxt, #realTxt, #payTxt { font-size: 12px; opacity: .85; margin-top: 3px; }
+  #stressTxt { font-weight: 600; margin-bottom: 6px; }
+  #cmd { bottom: 14px; left: 50%; transform: translateX(-50%); width: min(660px, 96vw); display: flex; flex-direction: column; gap: 7px; align-items: center; }
+  #cmdRow { display: flex; gap: 8px; width: 100%; }
+  #cmdIn { flex: 1; min-width: 0; font: inherit; font-size: 15px; padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,.8); background: rgba(255,255,255,.8); color: #16324a; outline: none; }
+  #cmdIn:focus { border-color: #3aa0ff; background: #fff; }
+  #cats, #cmdBtns { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  #cats button { padding: 4px 12px; font-size: 12px; border-radius: 999px; }
+  #cmdBtns button { padding: 7px 12px; }
+  #flash { position: fixed; inset: 0; z-index: 7; background: #fff; opacity: 0; pointer-events: none; }
+  #toast { top: 70px; left: 50%; transform: translateX(-50%); padding: 8px 18px; border-radius: 999px; background: rgba(30,40,70,.88); color: #fff !important;
+    font-size: 14px; opacity: 0; transition: opacity .3s; pointer-events: none; white-space: nowrap; max-width: 94vw; overflow: hidden; text-overflow: ellipsis; }
+  .modal { position: fixed; inset: 0; z-index: 8; display: none; align-items: center; justify-content: flex-end; padding-right: 4vw; background: rgba(10,20,40,.18); }
+  .modal.open { display: flex; }
+  .mbox { width: min(360px, 92vw); max-height: 88vh; overflow: auto; border-radius: 18px; padding: 18px 20px; background: rgba(255,255,255,.95); color: #16324a; box-sizing: border-box; }
+  body.night .mbox { background: rgba(28,36,72,.96); color: #dfe9ff; }
+  .mbox h2 { margin: 0 0 6px; font-size: 18px; display: flex; justify-content: space-between; align-items: center; }
+  .hint2 { font-size: 13px; opacity: .75; margin-bottom: 12px; }
+  .frow { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 13px; }
+  .frow label { width: 86px; flex: none; opacity: .8; }
+  .frow input { flex: 1; min-width: 0; font: inherit; padding: 7px 10px; border-radius: 10px; border: 1px solid rgba(0,60,120,.25); background: rgba(255,255,255,.9); color: #16324a; }
+  .opts { display: flex; gap: 6px; flex-wrap: wrap; }
+  .opts button { padding: 5px 11px; font-size: 13px; background: rgba(0,60,120,.08); border-color: transparent; }
+  .opts button.on { background: #3aa0ff; color: #fff; }
+  .opts button.dot { width: 28px; height: 28px; padding: 0; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.15); }
+  .opts button.dot.on { box-shadow: 0 0 0 3px #3aa0ff; }
+  .opts button.dot.def { background: #fff; color: #7a8aa0; font-size: 11px; }
+  .opts button.dot.def.on { color: #7a8aa0; }
+  .mfoot { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; }
+  .dl { display: flex; gap: 12px; padding: 7px 0; font-size: 14px; border-bottom: 1px dashed rgba(0,60,120,.15); }
+  .dl b { opacity: .6; font-weight: 600; }
+  #bk { position: fixed; inset: 0; z-index: 50; display: none; flex-direction: column; background: #fff; color: #222; font: 12px "Microsoft YaHei", "Segoe UI", sans-serif; }
+  #bkTop { background: #217346; color: #fff; padding: 7px 14px; display: flex; gap: 22px; font-size: 13px; }
+  #bkTabs { background: #217346; color: #e8f3ec; display: flex; padding: 0 8px; } #bkTabs span { padding: 6px 12px; }
+  #bkTabs span.on { background: #f3f3f3; color: #217346; border-radius: 4px 4px 0 0; font-weight: 600; }
+  #bkRib { background: #f3f3f3; display: flex; gap: 18px; padding: 10px 14px; border-bottom: 1px solid #d4d4d4; }
+  #bkFx { display: flex; gap: 12px; padding: 4px 8px; border-bottom: 1px solid #d4d4d4; color: #444; }
+  #bkGrid { flex: 1; overflow: auto; } #bkTable { border-collapse: collapse; }
+  #bkTable th { background: #f3f3f3; color: #555; font-weight: normal; border: 1px solid #d4d4d4; height: 20px; min-width: 34px; }
+  #bkTable tr:first-child th { width: 92px; }
+  #bkTable td { border: 1px solid #e1e1e1; height: 20px; padding: 0 5px; white-space: nowrap; }
+  #bkTable td.hd { background: #e2efda; font-weight: 600; } #bkTable td.num { text-align: right; }
+  #bkStatus { display: flex; justify-content: space-between; background: #217346; color: #fff; padding: 3px 12px; }
+  #cwMenu { position: fixed; z-index: 9; display: none; min-width: 150px; padding: 8px; border-radius: 14px; background: rgba(255,255,255,.96); box-shadow: 0 8px 30px rgba(20,40,80,.25); }
+  body.night #cwMenu { background: rgba(28,36,72,.97); color: #dfe9ff; }
+  #cwmTitle { font-size: 13px; font-weight: 700; padding: 2px 6px 6px; }
+  #cwMenu button { display: block; width: 100%; text-align: left; margin-top: 4px; padding: 7px 10px; font-size: 13px; border-radius: 10px; }
+  #cwMenu button.sub { font-size: 12px; opacity: .75; }
+  .cwhead, .cwrow { display: grid; grid-template-columns: 1.1fr 1.1fr 1.1fr 0.9fr 44px 34px; gap: 6px; align-items: center; margin-bottom: 7px; font-size: 13px; }
+  .cwhead { opacity: .6; font-size: 12px; margin-bottom: 4px; }
+  .cwrow input, .cwrow select { font: inherit; font-size: 13px; min-width: 0; padding: 5px 6px; border-radius: 8px; border: 1px solid rgba(0,60,120,.25); background: rgba(255,255,255,.9); color: #16324a; }
+  .cwrow input[type=color] { padding: 1px; height: 30px; width: 44px; }
+  .cwrow button { padding: 4px 6px; }
+  #nameIn { font: inherit; padding: 6px 10px; border-radius: 10px; border: 1px solid rgba(0,60,120,.25); width: 140px; background: rgba(255,255,255,.85); color: #16324a; }
+  #top { top: 16px; right: 20px; display: flex; gap: 8px; }
+  #bar { bottom: 18px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; width: max-content; max-width: 96vw; }
+  button { font: inherit; font-size: 14px; color: inherit; cursor: pointer; padding: 8px 13px; border-radius: 12px;
+    background: rgba(255,255,255,.55); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.7);
+    transition: transform .12s, background .2s; }
+  button:hover { transform: translateY(-2px); background: rgba(255,255,255,.85); }
+  button.on { background: rgba(120,200,255,.75); }
+  body.night button { background: rgba(40,55,110,.55); border-color: rgba(140,170,255,.35); }
+  body.night button:hover { background: rgba(70,95,170,.8); }
+  body.night button.on { background: rgba(90,130,255,.75); }
+  #tip { position: fixed; z-index: 6; pointer-events: none; padding: 4px 10px; border-radius: 8px; font-size: 13px;
+    background: rgba(20,30,60,.85); color: #fff; opacity: 0; transition: opacity .15s; transform: translate(14px, 14px); white-space: nowrap; }
+  #err { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 9; color: #16324a; font-size: 16px; text-align: center; padding: 20px; }
+</style>
+</head>
+<body>
+<div class="bg" id="bgDay"></div>
+<div class="bg" id="bgNight"></div>
+<canvas id="c"></canvas>
+
+<div class="ui" id="title">
+  <h1 id="h1">我的替身</h1>
+  <div id="status" class="glass">⌨️ 老老实实上班中</div>
+  <div id="hud" class="glass">
+    <div class="row"><span>😮‍💨 压力</span><div class="barw"><i id="bStress"></i></div></div>
+    <div id="stressTxt"></div>
+    <div id="doneTxt"></div>
+    <div id="realTxt"></div>
+    <div id="payTxt"></div>
+  </div>
+</div>
+<div id="flash"></div>
+<div class="ui" id="toast"></div>
+<div class="modal" id="prof"><div class="mbox">
+  <h2><span id="profTitle">👤 先告诉我你是谁</span><button id="profClose">✕</button></h2>
+  <div class="hint2">方块里的人就是你。现实里你不敢做的事，交给他。</div>
+  <div class="frow"><label>你的名字</label><input id="pName" maxlength="8" placeholder="比如：小林"></div>
+  <div class="frow"><label>你的职位</label><input id="pJob" maxlength="10" placeholder="比如：运营、程序员"></div>
+  <div class="frow"><label>老板怎么称呼</label><input id="pBoss" maxlength="6" placeholder="比如：王总"></div>
+  <div class="frow"><label>下班时间</label><input id="pOff" type="time"></div>
+  <div class="frow"><label>月薪（选填）</label><input id="pPay" type="number" min="0" step="500" placeholder="只存在你自己的浏览器里"></div>
+  <div class="frow"><label>穿着</label><div class="opts" id="oOutfit"></div></div>
+  <div class="frow"><label>发型</label><div class="opts" id="oHair"></div></div>
+  <div class="frow"><label>发色</label><div class="opts" id="oHairC"></div></div>
+  <div class="frow"><label>肤色</label><div class="opts" id="oSkin"></div></div>
+  <div class="frow"><label>衣服</label><div class="opts" id="oShirt"></div></div>
+  <div class="mfoot"><button id="profReset" style="font-size:12px">清空全部记录</button><button id="profOk" class="primary">这就是我</button></div>
+</div></div>
+<div class="modal" id="cwPanel"><div class="mbox" style="width:min(520px,94vw)">
+  <h2><span>👥 我的同事</span><button id="cwClose">✕</button></h2>
+  <div class="hint2">照着你现实里的同事来设定：名字、性格、穿着。点办公室里的同事可以让替身去找他。</div>
+  <div class="cwhead"><span>名字</span><span>性格</span><span>穿着</span><span>发型</span><span>衣色</span><span></span></div>
+  <div id="cwList"></div>
+</div></div>
+<div id="cwMenu"><div id="cwmTitle"></div>
+  <button data-a="roll">🙄 翻白眼</button><button data-a="coffee">☕ 送咖啡</button><button data-a="face">😜 做鬼脸</button><button data-a="chat">💬 找他聊天</button>
+  <button data-a="edit" class="sub">✏️ 改同事设定</button></div>
+<div class="modal" id="diary"><div class="mbox">
+  <h2><span>📓 替身日记</span><button id="diaryClose">✕</button></h2>
+  <div class="hint2" id="diaryHead"></div>
+  <div id="diaryList"></div>
+  <div class="hint2" id="diaryFoot"></div>
+</div></div>
+<div id="bk">
+  <div id="bkTop"><b>▦ Excel</b><span>Q4周报_终版_v3（最终）.xlsx</span></div>
+  <div id="bkTabs"><span>文件</span><span class="on">开始</span><span>插入</span><span>页面布局</span><span>公式</span><span>数据</span><span>审阅</span><span>视图</span></div>
+  <div id="bkRib"><span>📋 粘贴</span><span><b>B</b> <i>I</i> <u>U</u></span><span>等线 ▾ 11 ▾</span><span>≡ 合并后居中</span><span>条件格式 ▾</span><span>Σ 自动求和</span></div>
+  <div id="bkFx"><span>F12</span><span>fx</span><span>=SUM(F3:F11)</span></div>
+  <div id="bkGrid"><table id="bkTable"></table></div>
+  <div id="bkStatus"><span>就绪</span><span>平均值: 86.4　计数: 9　求和: 777.6　100%</span></div>
+</div>
+<div class="ui" id="top">
+  <button id="btnCw">👥 同事</button>
+  <button id="btnCam">🎥 跟随</button>
+  <button id="btnDiary">📓 日记</button>
+  <button id="btnProf">👤 我</button>
+  <button id="btnSound">🔊 声音</button>
+  <button id="btnNight">🌙 夜晚</button>
+  <button id="btnSpin">🔄</button>
+  <button id="btnKey">🙈 Esc</button>
+</div>
+<div class="ui" id="cmd">
+  <div id="cmdRow">
+    <input id="cmdIn" maxlength="30" placeholder="想让他替你做什么？比如：怼老板、去海边、睡一觉">
+    <button id="cmdGo" class="primary">让他去做</button>
+    <button id="cmdWork">💼 回去上班</button>
+  </div>
+  <div id="cats"></div>
+  <div id="cmdBtns"></div>
+</div>
+<div id="tip"></div>
+<div id="err">3D 库加载失败，请检查网络连接后刷新页面。</div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+} }
+</script>
+<script>
+  window.addEventListener('error', e => { if (!window.__ok) document.getElementById('err').style.display = 'flex'; }, true);
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+window.__ok = true;
+
+/* ---------- 基础 ---------- */
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+
+const scene = new THREE.Scene();
+scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+
+const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 200);
+const CAM_HOME = new THREE.Vector3(5.2, 5.6, 13.2).multiplyScalar(Math.min(1.9, Math.max(1, 1.75 / (innerWidth / innerHeight))));
+camera.position.copy(CAM_HOME);
+const controls = new OrbitControls(camera, canvas);
+controls.target.set(0, -0.9, 0);
+controls.enableDamping = true;
+controls.enablePan = false;
+controls.minDistance = 2.5;
+controls.maxDistance = 40;
+controls.autoRotateSpeed = 0.8;
+
+function resize() {
+  renderer.setSize(innerWidth, innerHeight, false);
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize); resize();
+
+/* ---------- 灯光 ---------- */
+const hemi = new THREE.HemisphereLight(0xffffff, 0x8899bb, 0.9);
+scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff4e0, 2.6);
+sun.position.set(6, 11, 5);
+sun.castShadow = true;
+sun.shadow.mapSize.set(3072, 3072);
+Object.assign(sun.shadow.camera, { left: -8, right: 8, top: 6, bottom: -6, near: 1, far: 34 });
+sun.shadow.bias = -0.0005;
+scene.add(sun);
+
+/* ---------- 小工具 ---------- */
+const mat = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.7, ...o });
+function add(geo, m, x, y, z, parent) {
+  const mesh = new THREE.Mesh(geo, m);
+  mesh.position.set(x, y, z);
+  mesh.castShadow = mesh.receiveShadow = true;
+  parent.add(mesh);
+  return mesh;
+}
+const box = (w, h, d, m, x, y, z, p) => add(new THREE.BoxGeometry(w, h, d), m, x, y, z, p);
+const cyl = (rt, rb, h, m, x, y, z, p, seg = 24) => add(new THREE.CylinderGeometry(rt, rb, h, seg), m, x, y, z, p);
+const sph = (r, m, x, y, z, p) => add(new THREE.SphereGeometry(r, 24, 16), m, x, y, z, p);
+const cap = (r, len, m, x, y, z, p) => add(new THREE.CapsuleGeometry(r, len, 6, 14), m, x, y, z, p);
+const group = (x, y, z, p) => { const g = new THREE.Group(); g.position.set(x, y, z); p.add(g); return g; };
+const lerp = (a, b, k) => a + (b - a) * k;
+const rand = (a, b) => a + Math.random() * (b - a);
+const clamp = THREE.MathUtils.clamp;
+const pickOne = a => a[Math.floor(Math.random() * a.length)];
+
+/* ---------- 存档 ---------- */
+const SAVE_KEY = 'glassMe.v1';
+const dayStr = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const save = Object.assign({ name: '', job: '', boss: '', outfit: '', hair: '', hairCol: 0, skin: 0, shirt: -1, setup: false,
+  stress: 35, stressAt: 0, pay: 0, onAt: '09:00', offAt: '18:00', slackSec: 0, day: '', dayStart: 0, diary: [], last: {}, night: 0, muted: true },
+  (() => { try { return JSON.parse(localStorage.getItem(SAVE_KEY)) || {}; } catch (e) { return {}; } })());
+let persist = () => { save.stressAt = Date.now(); try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} };
+if (save.stressAt) save.stress = Math.min(100, save.stress + (Date.now() - save.stressAt) / 60000 * 0.6);
+if (save.day !== dayStr()) { save.day = dayStr(); save.dayStart = Date.now(); save.diary = []; save.slackSec = 0; }
+if (!save.outfit) { save.outfit = 'suit'; save.hair = 'short'; save.hairCol = 0; save.skin = 0; save.shirt = -1; }
+const B = () => save.boss || '老板';
+setInterval(() => persist(), 10000);
+
+/* ---------- 声音 ---------- */
+let actx = null, master = null, muted = !!save.muted;
+function audio() {
+  if (!actx) { try { actx = new AudioContext(); master = actx.createGain(); master.gain.value = 0.5; master.connect(actx.destination); } catch (e) {} }
+  if (actx && actx.state === 'suspended') actx.resume();
+}
+addEventListener('pointerdown', audio);
+function tone(f, d = 0.12, type = 'sine', vol = 0.15, when = 0, slide = 0) {
+  if (!actx || muted || actx.state !== 'running') return;
+  const t = actx.currentTime + when, o = actx.createOscillator(), g = actx.createGain();
+  o.type = type; o.frequency.setValueAtTime(f, t);
+  if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, f + slide), t + d);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+  o.connect(g).connect(master); o.start(t); o.stop(t + d + 0.03);
+}
+const sfx = {
+  key: () => tone(rand(1700, 2500), 0.02, 'square', 0.01),
+  pop: () => tone(520, 0.1, 'sine', 0.1, 0, 300),
+  ring: () => { tone(880, 0.11, 'square', 0.04); tone(1100, 0.11, 'square', 0.04, 0.13); },
+  sip: () => tone(320, 0.25, 'sine', 0.07, 0, -130),
+  water: () => { for (let i = 0; i < 8; i++) tone(rand(500, 900), 0.08, 'sine', 0.04, i * 0.15, 200); },
+  win: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.2, 'triangle', 0.13, i * 0.11)),
+  miss: () => tone(230, 0.3, 'sawtooth', 0.04, 0, -110),
+  whoosh: () => tone(900, 0.25, 'sine', 0.05, 0, -700),
+  beep: () => { tone(1200, 0.07, 'sine', 0.07); tone(1600, 0.09, 'sine', 0.07, 0.08); },
+  step: () => tone(110, 0.05, 'sine', 0.06),
+  click: () => tone(700, 0.04, 'triangle', 0.08),
+  shake: () => { for (let i = 0; i < 10; i++) tone(rand(1200, 3000), 0.12, 'sine', 0.03, i * 0.07); },
+  yawn: () => tone(420, 0.7, 'sine', 0.05, 0, -220),
+};
+
+/* ---------- 玻璃立方体 ---------- */
+const world = group(0, 0, 0, scene);
+const H = 3, BX = 5.4, BZ = 3, RX = 2.7;   // 半高 / 半宽 / 半深 / 房间往左挪多少让方块居中
+const glass = new THREE.Mesh(
+  new THREE.BoxGeometry(BX * 2, H * 2, BZ * 2),
+  new THREE.MeshPhysicalMaterial({ color: 0xbfe6ff, transparent: true, opacity: 0.1, roughness: 0.03, metalness: 0,
+    envMapIntensity: 1.6, side: THREE.DoubleSide, depthWrite: false })
+);
+glass.renderOrder = 5;
+world.add(glass);
+
+const frameMat = new THREE.MeshStandardMaterial({ color: 0x9fe8ff, emissive: 0x38c8ff, emissiveIntensity: 0.6, roughness: 0.3 });
+for (const axis of [0, 1, 2]) for (const a of [-1, 1]) for (const b of [-1, 1]) {
+  const ext = [BX, H, BZ], dims = [0.05, 0.05, 0.05]; dims[axis] = ext[axis] * 2 + 0.05;
+  const pos = [0, 0, 0]; pos[(axis + 1) % 3] = a * ext[(axis + 1) % 3]; pos[(axis + 2) % 3] = b * ext[(axis + 2) % 3];
+  const m = new THREE.Mesh(new THREE.BoxGeometry(...dims), frameMat);
+  m.position.set(...pos); world.add(m);
+}
+
+{ /* 立方体下方的光晕 */
+  const cv = document.createElement('canvas'); cv.width = cv.height = 256;
+  const g = cv.getContext('2d'); const gr = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+  gr.addColorStop(0, 'rgba(90,200,255,.55)'); gr.addColorStop(1, 'rgba(90,200,255,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 256, 256);
+  const glow = new THREE.Mesh(new THREE.PlaneGeometry(BX * 2 + 6, BZ * 2 + 6),
+    new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(cv), transparent: true, depthWrite: false }));
+  glow.rotation.x = -Math.PI / 2; glow.position.y = -4.1; scene.add(glow);
+}
+
+/* 星星 */
+const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.28, transparent: true, opacity: 0, depthWrite: false });
+{
+  const pts = [];
+  for (let i = 0; i < 500; i++) { const v = new THREE.Vector3().randomDirection().multiplyScalar(rand(45, 70)); pts.push(v.x, v.y, v.z); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+  scene.add(new THREE.Points(g, starMat));
+}
+
+/* 粒子（雪花 / 彩纸），在立方体坐标里 */
+const PN = 280, pPos = new Float32Array(PN * 3), pVel = new Float32Array(PN * 3), pCol = new Float32Array(PN * 3);
+const pGeo = new THREE.BufferGeometry();
+pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+pGeo.setAttribute('color', new THREE.BufferAttribute(pCol, 3));
+const pMat = new THREE.PointsMaterial({ size: 0.09, vertexColors: true, transparent: true, opacity: 0, depthWrite: false });
+const parts = new THREE.Points(pGeo, pMat); parts.frustumCulled = false; world.add(parts);
+let pLife = 0, pGrav = 0.5, shakeT = 0;
+const tmpC = new THREE.Color();
+function burst(kind, ox = 0, oy = 0, oz = 0) {
+  for (let i = 0; i < PN; i++) {
+    if (kind === 'snow') {
+      pPos[i * 3] = rand(-BX + 0.2, BX - 0.2); pPos[i * 3 + 1] = rand(-2.4, 2.8); pPos[i * 3 + 2] = rand(-2.8, 2.8);
+      pVel[i * 3] = rand(-2.5, 2.5); pVel[i * 3 + 1] = rand(-1, 3); pVel[i * 3 + 2] = rand(-2.5, 2.5);
+      tmpC.setHSL(rand(0.5, 0.6), 0.6, rand(0.8, 1));
+    } else {
+      pPos[i * 3] = ox + rand(-0.2, 0.2); pPos[i * 3 + 1] = oy + rand(-0.1, 0.2); pPos[i * 3 + 2] = oz + rand(-0.2, 0.2);
+      const a = rand(0, 6.283), s = rand(0.3, 1.8);
+      pVel[i * 3] = Math.cos(a) * s; pVel[i * 3 + 1] = rand(1.5, 4); pVel[i * 3 + 2] = Math.sin(a) * s;
+      tmpC.setHSL(Math.random(), 0.9, 0.6);
+    }
+    pCol[i * 3] = tmpC.r; pCol[i * 3 + 1] = tmpC.g; pCol[i * 3 + 2] = tmpC.b;
+  }
+  pGeo.attributes.color.needsUpdate = true;
+  pLife = kind === 'snow' ? 11 : 5; pGrav = kind === 'snow' ? 0.45 : 2.2;
+}
+function tickParts(dt, t) {
+  if (pLife <= 0) { pMat.opacity = 0; return; }
+  pLife -= dt; pMat.opacity = Math.min(1, pLife / 1.5);
+  const drag = Math.exp(-dt * 1.2);
+  for (let i = 0; i < PN; i++) {
+    const ix = i * 3, x = pPos[ix], z = pPos[ix + 2];
+    const fl = Math.abs(x) < BX - 0.3 && Math.abs(z) < 2.7 ? -2.42 : -2.93;
+    if (pPos[ix + 1] <= fl) { pPos[ix + 1] = fl; continue; }
+    pVel[ix] = pVel[ix] * drag + Math.sin(t * 2 + i) * 0.4 * dt; pVel[ix + 2] = pVel[ix + 2] * drag + Math.cos(t * 2.3 + i) * 0.4 * dt;
+    pVel[ix + 1] = Math.max(-1.2, pVel[ix + 1] - pGrav * dt);
+    pPos[ix] = clamp(x + pVel[ix] * dt, -BX + 0.1, BX - 0.1); pPos[ix + 1] = Math.min(2.9, pPos[ix + 1] + pVel[ix + 1] * dt); pPos[ix + 2] = clamp(z + pVel[ix + 2] * dt, -2.9, 2.9);
+  }
+  pGeo.attributes.position.needsUpdate = true;
+}
+
+/* ---------- 房间（y=0 是地板面） ---------- */
+const ROOM_Y = -2.45;
+const room = group(-RX, ROOM_Y, 0, world);
+const floor = box(BX * 2, 0.12, 5.4, mat(0xcfd9e8, { roughness: 0.35 }), RX, -0.06, 0, room);
+floor.castShadow = false;
+box(BX * 2 + 0.1, 0.04, 5.5, frameMat, RX, -0.14, 0, room).castShadow = false;
+for (const gx of [0, 5.4]) { const grid = new THREE.GridHelper(5.4, 12, 0x7fd6ff, 0x7fd6ff); grid.material.transparent = true; grid.material.opacity = 0.25; grid.position.set(gx, 0.004, 0); room.add(grid); }
+cyl(1.3, 1.3, 0.015, mat(0x9fb4e8, { roughness: 0.95 }), 5.3, 0.008, -0.2, room, 48).castShadow = false;
+cyl(1.15, 1.15, 0.015, mat(0x7c9cff, { roughness: 0.95 }), -0.55, 0.008, 0, room, 48).castShadow = false;
+
+const interact = [];
+const reg = (obj, act, tip) => { obj.userData.act = act; obj.userData.tip = tip; interact.push(obj); return obj; };
+
+/* 桌子 */
+const DESK = 0.72;
+const wood = mat(0xf2d7b0, { roughness: 0.5 }), metal = mat(0xb8c2d0, { metalness: 0.7, roughness: 0.3 });
+const deskG = group(-1.5, 0, 0, room);
+box(1.0, 0.06, 2.2, wood, 0, DESK - 0.03, 0, deskG);
+for (const sx of [-0.42, 0.42]) for (const sz of [-1.02, 1.02]) box(0.06, DESK - 0.06, 0.06, metal, sx, (DESK - 0.06) / 2, sz, deskG);
+
+/* 显示器 */
+const screenCv = document.createElement('canvas'); screenCv.width = 320; screenCv.height = 192;
+const sctx = screenCv.getContext('2d');
+const screenTex = new THREE.CanvasTexture(screenCv); screenTex.colorSpace = THREE.SRGBColorSpace;
+const monitor = reg(group(-1.78, DESK, 0, room), 'screen', '切换屏幕');
+const dark = mat(0x2a2f3a, { roughness: 0.4 });
+cyl(0.16, 0.18, 0.025, dark, 0, 0.012, 0, monitor);
+box(0.05, 0.25, 0.08, dark, -0.02, 0.14, 0, monitor);
+box(0.05, 0.66, 1.08, dark, 0, 0.52, 0, monitor);
+const screen = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.58), new THREE.MeshBasicMaterial({ map: screenTex, toneMapped: false }));
+screen.rotation.y = Math.PI / 2; screen.position.set(0.027, 0.52, 0); monitor.add(screen);
+const screenLight = new THREE.PointLight(0x7fb8ff, 0.5, 4, 2); screenLight.position.set(0.4, 0.55, 0); monitor.add(screenLight);
+
+/* 键盘 */
+const kbd = group(0.33, DESK, 0, deskG);
+box(0.26, 0.03, 0.66, mat(0xf7f9fc, { roughness: 0.4 }), 0, 0.015, 0, kbd);
+box(0.2, 0.006, 0.6, mat(0xcfd6e2), 0, 0.033, 0, kbd);
+const KBD_HOME = kbd.position.clone();
+
+/* 咖啡杯 */
+const mug = reg(group(-1.12, DESK, 0.52, room), 'sip', '喝咖啡');
+mug.rotation.order = 'YXZ';
+const mugMat = mat(0xff7a59, { roughness: 0.35 });
+cyl(0.06, 0.05, 0.12, mugMat, 0, 0.06, 0, mug);
+cyl(0.05, 0.05, 0.005, mat(0x4a2b18), 0, 0.118, 0, mug);
+add(new THREE.TorusGeometry(0.035, 0.011, 8, 16), mugMat, 0, 0.06, 0.07, mug).rotation.y = Math.PI / 2;
+const MUG_HOME = mug.position.clone();
+
+/* 电话 */
+const phone = reg(group(-1.12, DESK + 0.012, -0.52, room), 'phone', '来电话');
+phone.rotation.order = 'YXZ';
+box(0.09, 0.02, 0.17, mat(0x23283a, { roughness: 0.25 }), 0, 0, 0, phone);
+const phoneFace = box(0.078, 0.004, 0.155, new THREE.MeshStandardMaterial({ color: 0x111111, emissive: 0x33ff99, emissiveIntensity: 0 }), 0, 0.011, 0, phone);
+const PHONE_HOME = phone.position.clone();
+
+/* 台灯 */
+const lamp = reg(group(-1.8, DESK, 0.92, room), 'lamp', '开 / 关台灯');
+const lampBody = mat(0xffd34d, { roughness: 0.4 });
+cyl(0.11, 0.12, 0.03, lampBody, 0, 0.015, 0, lamp);
+cyl(0.014, 0.014, 0.5, metal, 0, 0.27, 0, lamp);
+const lampHead = group(0, 0.52, 0, lamp); lampHead.rotation.z = -0.9; lampHead.rotation.y = 0.5;
+cyl(0.014, 0.014, 0.3, metal, 0, 0.13, 0, lampHead);
+cyl(0.05, 0.13, 0.16, lampBody, 0, 0.3, 0, lampHead).rotation.z = Math.PI;
+const bulbMat = new THREE.MeshStandardMaterial({ color: 0xfff6d8, emissive: 0xffd27a, emissiveIntensity: 0 });
+sph(0.045, bulbMat, 0, 0.36, 0, lampHead).castShadow = false;
+const lampLight = new THREE.PointLight(0xffc878, 0, 7, 1.6); lampLight.position.set(0, 0.42, 0); lampHead.add(lampLight);
+
+/* 椅子 */
+const chair = reg(group(-0.6, 0, 0, room), 'spin', '转椅子');
+const chairMat = mat(0x3a4666, { roughness: 0.6 });
+box(0.5, 0.07, 0.5, chairMat, 0, 0.385, 0, chair);
+box(0.07, 0.55, 0.48, chairMat, 0.25, 0.72, 0, chair);
+cyl(0.03, 0.03, 0.3, metal, 0, 0.2, 0, chair);
+cyl(0.26, 0.28, 0.04, metal, 0, 0.03, 0, chair);
+
+/* 书架 */
+const shelf = reg(group(0.6, 0, -2.3, room), 'shelf', '去看书');
+const shelfMat = mat(0xe9c79a, { roughness: 0.55 });
+box(0.05, 2.0, 0.36, shelfMat, -0.6, 1.0, 0, shelf); box(0.05, 2.0, 0.36, shelfMat, 0.6, 1.0, 0, shelf);
+box(1.2, 2.0, 0.03, shelfMat, 0, 1.0, -0.17, shelf);
+const bookColors = [0xff6b6b, 0x4dabf7, 0xffd43b, 0x69db7c, 0xb197fc, 0xff922b, 0xf8f9fa, 0x38d9a9];
+for (let i = 0; i < 5; i++) {
+  const y = 0.03 + i * 0.49;
+  box(1.2, 0.05, 0.36, shelfMat, 0, y, 0, shelf);
+  if (i === 4) break;
+  let x = -0.52;
+  while (x < 0.42) {
+    const w = rand(0.05, 0.1), h = rand(0.28, 0.4);
+    if (Math.random() < 0.85) {
+      const b = box(w, h, 0.24, mat(pickOne(bookColors), { roughness: 0.6 }), x + w / 2, y + 0.025 + h / 2, 0.02, shelf);
+      if (Math.random() < 0.12) b.rotation.z = -0.25;
+    }
+    x += w + 0.012;
+  }
+}
+/* 手里的书 */
+const book = group(0, 0, 0, room); book.rotation.order = 'YXZ'; book.visible = false;
+box(0.34, 0.025, 0.24, mat(0xff6b6b, { roughness: 0.6 }), 0, 0, 0, book);
+box(0.31, 0.012, 0.22, mat(0xfffdf5), 0, 0.016, 0, book);
+
+/* 饮水机 */
+const cooler = reg(group(2.25, 0, 0.6, room), 'cooler', '去接水');
+box(0.42, 1.0, 0.42, mat(0xf4f7fb, { roughness: 0.35 }), 0, 0.5, 0, cooler);
+box(0.02, 0.22, 0.26, mat(0xcdd6e4), -0.215, 0.68, 0, cooler);
+box(0.05, 0.03, 0.04, mat(0x3b82f6), -0.24, 0.72, -0.06, cooler);
+box(0.05, 0.03, 0.04, mat(0xef4444), -0.24, 0.72, 0.06, cooler);
+const bottle = cyl(0.16, 0.16, 0.42, new THREE.MeshPhysicalMaterial({ color: 0x7cc8ff, transparent: true, opacity: 0.55, roughness: 0.05 }), 0, 1.23, 0, cooler);
+cyl(0.07, 0.16, 0.06, bottle.material, 0, 1.03, 0, cooler);
+
+/* 垃圾桶 + 纸团 */
+const BIN = [2.3, 1.55];
+const bin = reg(group(BIN[0], 0, BIN[1], room), 'toss', '投纸团');
+const binM = mat(0x5a6b8c, { roughness: 0.5, side: THREE.DoubleSide });
+add(new THREE.CylinderGeometry(0.2, 0.15, 0.42, 24, 1, true), binM, 0, 0.21, 0, bin);
+cyl(0.15, 0.15, 0.02, binM, 0, 0.01, 0, bin);
+add(new THREE.TorusGeometry(0.2, 0.015, 8, 24), mat(0x8fa3c8), 0, 0.42, 0, bin).rotation.x = Math.PI / 2;
+const paperM = mat(0xffffff, { roughness: 0.9 });
+const paperGeo = new THREE.IcosahedronGeometry(0.055, 0);
+const paper = add(paperGeo, paperM, 0, 0, 0, room); paper.visible = false;
+const ball = { flying: false, hit: false, u: 0, p0: new THREE.Vector3(), p1: new THREE.Vector3() };
+const litter = [];
+
+/* 办公室沙发（午休用） */
+const BED = { x0: -0.73, z: -2.12, top: 0.4, lieY: 0.61 };
+const bed = reg(group(0, 0, BED.z, room), 'sleep', '去沙发躺会儿');
+{
+  const sofaM = mat(0x7d93c4, { roughness: 0.95 }), sofaD = mat(0x5f76a8, { roughness: 0.95 });
+  box(2.3, 0.26, 0.96, sofaD, -1.54, 0.15, 0, bed);
+  box(2.0, 0.14, 0.82, sofaM, -1.54, 0.33, 0.05, bed);
+  box(2.3, 0.6, 0.2, sofaD, -1.54, 0.56, -0.4, bed);
+  for (const ax of [-2.62, -0.46]) box(0.16, 0.5, 0.96, sofaD, ax, 0.33, 0, bed);
+  for (const lx of [-2.55, -0.53]) for (const lz of [-0.4, 0.4]) box(0.07, 0.04, 0.07, metal, lx, 0.01, lz, bed);
+  sph(0.22, mat(0xffd36b, { roughness: 0.95 }), -2.3, 0.5, 0.05, bed).scale.set(0.9, 0.5, 1.2);
+}
+const blanket = group(BED.x0 - 0.02, BED.top, 0, bed);
+box(1.0, 0.3, 0.84, mat(0xe9edf5, { roughness: 1 }), -0.5, 0.14, 0.05, blanket);
+let lying = false, blanketK = 0, manY = 0;
+
+/* 盆栽 */
+const plant = reg(group(2.38, 0, -1.6, room), 'plant', '摸摸盆栽');
+cyl(0.2, 0.15, 0.32, mat(0xf4f1ea, { roughness: 0.5 }), 0, 0.16, 0, plant);
+const leaves = group(0, 0.32, 0, plant);
+const leafMat = mat(0x3fbf7f, { roughness: 0.6 });
+for (let i = 0; i < 9; i++) {
+  const a = (i / 9) * Math.PI * 2, len = rand(0.45, 0.8);
+  const stem = group(0, 0, 0, leaves); stem.rotation.y = a; stem.rotation.z = rand(0.25, 0.7);
+  sph(0.12, leafMat, 0, len * 0.6, 0, stem).scale.set(0.55, len / 0.24, 0.25);
+}
+
+/* 吊灯 */
+const CEIL = H * 2 - 0.55;
+cyl(0.008, 0.008, 1.9, dark, 0.2, CEIL - 0.95, 0.2, room).castShadow = false;
+const pendMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff1cc, emissiveIntensity: 0.4, roughness: 0.4 });
+sph(0.22, pendMat, 0.2, CEIL - 2.0, 0.2, room).castShadow = false;
+const pendLight = new THREE.PointLight(0xfff1cc, 0, 9, 1.5); pendLight.position.set(0.2, CEIL - 2.0, 0.2); room.add(pendLight);
+cyl(0.008, 0.008, 1.9, dark, 5.3, CEIL - 0.95, -0.2, room).castShadow = false;
+sph(0.22, pendMat, 5.3, CEIL - 2.0, -0.2, room).castShadow = false;
+const pendLight2 = new THREE.PointLight(0xfff1cc, 0, 10, 1.5); pendLight2.position.set(5.3, CEIL - 2.0, -0.2); room.add(pendLight2);
+
+/* 悬浮全息面板 */
+const holos = [];
+function holo(x, y, z, ry, w, h, draw) {
+  const cv = document.createElement('canvas'); cv.width = 256; cv.height = Math.round(256 * h / w);
+  const g = cv.getContext('2d');
+  g.fillStyle = 'rgba(40,150,230,.16)'; g.fillRect(0, 0, cv.width, cv.height);
+  g.strokeStyle = 'rgba(90,200,255,.95)'; g.lineWidth = 4; g.strokeRect(2, 2, cv.width - 4, cv.height - 4);
+  draw(g, cv.width, cv.height);
+  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
+    new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.8, side: THREE.DoubleSide, depthWrite: false, toneMapped: false }));
+  m.position.set(x, y, z); m.rotation.y = ry; m.userData.y0 = y; room.add(m); holos.push(m);
+}
+holo(-2.15, 2.0, -0.95, Math.PI / 2 - 0.35, 1.1, 0.7, (g, w, h) => {
+  g.strokeStyle = '#7dffb0'; g.lineWidth = 5; g.beginPath();
+  [0.75, 0.6, 0.66, 0.42, 0.5, 0.28, 0.2].forEach((v, i) => i ? g.lineTo(24 + i * 34, v * h) : g.moveTo(24, v * h)); g.stroke();
+  g.fillStyle = 'rgba(190,235,255,.9)'; g.fillRect(20, 16, 90, 8); g.fillRect(20, 32, 54, 8);
+});
+holo(-2.15, 2.15, 0.85, Math.PI / 2 + 0.35, 0.8, 0.8, (g, w) => {
+  g.lineWidth = 22; const c = w / 2;
+  [['#4dabf7', 0, 2.6], ['#ffd43b', 2.6, 4.4], ['#ff8787', 4.4, 6.283]].forEach(([col, a, b]) => { g.strokeStyle = col; g.beginPath(); g.arc(c, c, 70, a, b); g.stroke(); });
+  g.fillStyle = '#e8f6ff'; g.font = '600 40px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('76%', c, c);
+});
+holo(1.3, 2.75, -2.2, 0, 1.3, 0.5, g => {
+  g.fillStyle = 'rgba(190,235,255,.95)';
+  for (let i = 0; i < 4; i++) g.fillRect(18, 16 + i * 20, [200, 150, 180, 90][i], 8);
+});
+
+/* ---------- 可解锁的物件 ---------- */
+const decorG = {};
+/* 星星灯串 */
+const lightMats = [0xffd866, 0xff8fa3, 0x7fdcff, 0x9dffb0].map(c => new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: 1.5 }));
+{
+  const g = group(0, 0, 0, world); decorG.d_lights = g;
+  const geo = new THREE.SphereGeometry(0.045, 10, 8); let n = 0;
+  for (const [ax, sg] of [[0, 1], [0, -1], [2, 1], [2, -1]]) { const L = ax === 0 ? BX : BZ, N = ax === 0 ? 22 : 12; for (let i = 0; i <= N; i++) {
+    const u = i / N, a = -L + 0.15 + u * (2 * L - 0.3), y = H - 0.15 - Math.sin(u * Math.PI * (ax === 0 ? 6 : 3)) ** 2 * 0.22;
+    const m = new THREE.Mesh(geo, lightMats[n++ % 4]);
+    if (ax === 0) m.position.set(a, y, sg * (BZ - 0.08)); else m.position.set(sg * (BX - 0.08), y, a);
+    g.add(m);
+  } }
+}
+/* 鱼缸 */
+let fishDart = 0, fishPhase = 0;
+const fishes = [];
+{
+  const g = reg(group(2.28, 0, -0.8, room), 'fish', '逗逗小鱼'); decorG.d_fish = g;
+  box(0.5, 0.55, 0.5, wood, 0, 0.275, 0, g);
+  box(0.46, 0.36, 0.44, new THREE.MeshPhysicalMaterial({ color: 0xbfe6ff, transparent: true, opacity: 0.25, roughness: 0.05, depthWrite: false }), 0, 0.74, 0, g).castShadow = false;
+  box(0.44, 0.29, 0.42, new THREE.MeshPhysicalMaterial({ color: 0x4db8ff, transparent: true, opacity: 0.35, roughness: 0.1, depthWrite: false }), 0, 0.71, 0, g).castShadow = false;
+  box(0.44, 0.03, 0.42, mat(0xf1dfb0), 0, 0.575, 0, g);
+  sph(0.03, leafMat, 0.13, 0.65, -0.11, g).scale.set(0.6, 2.6, 0.6);
+  [0xff8a3d, 0xffd43b].forEach(c => {
+    const f = group(0, 0.72, 0, g), m = mat(c, { roughness: 0.4 });
+    sph(0.035, m, 0, 0, 0, f).scale.set(0.6, 0.85, 1.4);
+    add(new THREE.ConeGeometry(0.03, 0.05, 4), m, 0, 0, -0.065, f).rotation.x = Math.PI / 2;
+    fishes.push(f);
+  });
+}
+/* 街机 */
+const arcCv = document.createElement('canvas'); arcCv.width = 48; arcCv.height = 40;
+const arcCtx = arcCv.getContext('2d');
+const arcTex = new THREE.CanvasTexture(arcCv); arcTex.magFilter = THREE.NearestFilter; arcTex.colorSpace = THREE.SRGBColorSpace;
+let arcClock = 0, arcPlaying = false;
+{
+  const g = reg(group(-2.3, 0, 2.0, room), 'arcade', '打街机');
+  const body = mat(0x7a5cff, { roughness: 0.5 });
+  box(0.5, 1.5, 0.56, body, 0, 0.75, 0, g);
+  box(0.06, 0.4, 0.5, mat(0x1a1d2b), 0.24, 1.1, 0, g);
+  const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.44, 0.34), new THREE.MeshBasicMaterial({ map: arcTex, toneMapped: false }));
+  scr.rotation.y = Math.PI / 2; scr.position.set(0.275, 1.1, 0); g.add(scr);
+  box(0.24, 0.06, 0.56, mat(0x5a3fe0), 0.33, 0.8, 0, g).rotation.z = -0.2;
+  cyl(0.012, 0.012, 0.09, metal, 0.34, 0.87, -0.12, g, 8); sph(0.03, mat(0xff5d5d), 0.34, 0.92, -0.12, g);
+  cyl(0.025, 0.025, 0.02, mat(0xffd43b), 0.36, 0.83, 0.06, g, 12); cyl(0.025, 0.025, 0.02, mat(0x38d9a9), 0.36, 0.83, 0.15, g, 12);
+  box(0.14, 0.14, 0.56, new THREE.MeshStandardMaterial({ color: 0xffe066, emissive: 0xffc400, emissiveIntensity: 0.9 }), 0.2, 1.42, 0, g);
+}
+function drawArcade(t) {
+  const c = arcCtx; c.fillStyle = '#0b0f2a'; c.fillRect(0, 0, 48, 40);
+  for (let i = 0; i < 10; i++) { c.fillStyle = '#5566aa'; c.fillRect((i * 17 + 3) % 48, (i * 11 + t * (arcPlaying ? 30 : 6)) % 40, 1, 1); }
+  const cols = ['#ff5d5d', '#ffd43b', '#38d9a9', '#4dabf7'];
+  for (let r = 0; r < 3; r++) for (let k = 0; k < 6; k++) { c.fillStyle = cols[(r + k) % 4]; c.fillRect(5 + k * 7 + Math.round(Math.sin(t * 2) * 3), 4 + r * 6, 4, 3); }
+  c.fillStyle = '#ffffff'; c.fillRect(22 + Math.round(Math.sin(t * (arcPlaying ? 5 : 1.2)) * 14), 34, 5, 3);
+  if (arcPlaying && Math.floor(t * 8) % 2) c.fillRect(24 + Math.round(Math.sin(t * 5) * 14), 20 + (Math.floor(t * 20) % 12), 1, 3);
+  arcTex.needsUpdate = true;
+}
+/* 小猫 */
+const cat = reg(group(2.3, 0, -0.2, room), 'cat', '摸摸小猫'); decorG.d_cat = cat;
+const catTail = group(0, 0.1, -0.14, cat), catHead = group(0, 0.2, 0.12, cat), catEyes = [];
+{
+  const cm = mat(0xfff4e6, { roughness: 0.9 }), co = mat(0xffb066, { roughness: 0.9 });
+  sph(0.13, cm, 0, 0.105, 0, cat).scale.set(0.9, 0.8, 1.2);
+  sph(0.07, co, 0, 0.16, -0.05, cat).scale.set(1.1, 0.5, 1.2);
+  sph(0.1, cm, 0, 0, 0, catHead);
+  for (const s of [-1, 1]) {
+    const e = add(new THREE.ConeGeometry(0.036, 0.07, 4), co, s * 0.058, 0.09, 0, catHead); e.rotation.z = -s * 0.3;
+    catEyes.push(sph(0.015, mat(0x1d2433, { roughness: 0.2 }), s * 0.036, 0.012, 0.09, catHead));
+    sph(0.02, cm, s * 0.022, -0.028, 0.088, catHead);
+  }
+  sph(0.01, mat(0xff8fa3), 0, -0.012, 0.1, catHead);
+  cap(0.022, 0.16, co, 0, 0.09, 0, catTail);
+}
+const catS = { spot: 0, wait: rand(12, 22), u: 1, from: new THREE.Vector3(), happy: 0 };
+function catSpot(i, v) {
+  if (i === 0) v.set(2.3, 0, -0.2); else if (i === 1) v.set(0.25, 2.02, -2.3); else v.set(-1.05, lerp(0.4, 0.72, blanketK), -2.12);
+  return v;
+}
+const CAT_ROT = [-0.6, 0.3, Math.PI / 2];
+
+/* ---------- 气泡 ---------- */
+function makeBubble(scale) {
+  const cv = document.createElement('canvas'); cv.width = 512; cv.height = 256;
+  const g = cv.getContext('2d');
+  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0, depthTest: false }));
+  sp.scale.set(1.5 * scale, 0.75 * scale, 1); sp.renderOrder = 20; room.add(sp);
+  const b = { sp, t: 0, dur: 0,
+    say(text, dur = 2) {
+      const F = s => `600 ${s}px "Microsoft YaHei","Segoe UI Emoji",sans-serif`;
+      g.clearRect(0, 0, 512, 256);
+      let size = 96; g.font = F(size);
+      while (g.measureText(text).width > 400 && size > 30) { size -= 6; g.font = F(size); }
+      const w = Math.max(170, g.measureText(text).width + 80), x = (512 - w) / 2;
+      g.fillStyle = 'rgba(255,255,255,.96)'; g.strokeStyle = 'rgba(60,160,230,.9)'; g.lineWidth = 6;
+      g.beginPath(); g.roundRect(x, 20, w, 160, 50); g.fill(); g.stroke();
+      g.beginPath(); g.moveTo(236, 178); g.lineTo(256, 226); g.lineTo(286, 178); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(236, 180); g.lineTo(256, 226); g.lineTo(286, 180); g.stroke();
+      g.fillStyle = '#1d2a44'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 256, 104);
+      tex.needsUpdate = true; b.t = 0; b.dur = dur; sfx.pop();
+    },
+    tick(dt) { b.t += dt; sp.material.opacity = b.t < b.dur ? Math.min(1, b.t * 6, (b.dur - b.t) * 4) : 0; }
+  };
+  return b;
+}
+const manBub = makeBubble(1), botBub = makeBubble(0.6), catBub = makeBubble(0.6);
+const say = (t, d) => manBub.say(t, d);
+
+/* ---------- 小人（正面朝 +z） ---------- */
+const man = reg(group(-0.62, 0, 0, room), 'wave', '跟他打招呼');
+man.rotation.order = 'YXZ';
+man.rotation.y = -Math.PI / 2;
+/* 低多边形块面风格（参考 Quaternius 的人物比例）：头、身子、腿约各占三分之一 */
+const FLAT = { flatShading: true, roughness: 0.88, metalness: 0 };
+const white = mat(0xffffff, { roughness: 0.5 }), eyeM = mat(0x2a201c, { roughness: 0.35 }), mouthM = mat(0x4a2424);
+/* 圆角块：盒子往球形收一点，再按上下收窄，配合 flatShading 出块面感 */
+function rboxGeo(w, h, d, round = 0.55, seg = 3, tb = 0, tt = 0) {
+  const g = new THREE.BoxGeometry(1, 1, 1, seg, seg, seg), p = g.attributes.position, v = new THREE.Vector3(), n = new THREE.Vector3();
+  for (let i = 0; i < p.count; i++) {
+    v.fromBufferAttribute(p, i); n.copy(v).normalize().multiplyScalar(0.6); v.lerp(n, round);
+    const k = 1 - tb * clamp(-v.y * 2, 0, 1) - tt * clamp(v.y * 2, 0, 1); v.x *= k; v.z *= k;
+    p.setXYZ(i, v.x * w, v.y * h, v.z * d);
+  }
+  g.computeVertexNormals(); return g;
+}
+const rb = (w, h, d, m, x, y, z, p, o = {}) => add(rboxGeo(w, h, d, o.r ?? 0.55, o.seg ?? 3, o.tb ?? 0, o.tt ?? 0), m, x, y, z, p);
+const limb = (r1, r2, len, m, p) => add(new THREE.CylinderGeometry(r1, r2, len, 7), m, 0, -len / 2, 0, p);
+const lowSph = (r, m, x, y, z, p) => add(new THREE.SphereGeometry(r, 7, 5), m, x, y, z, p);
+const look = p => { const g = new THREE.Group(); p.add(g); return g; };
+const clearG = g => { while (g.children.length) g.remove(g.children[0]); };
+const STAND_Y = 0.44, HC = 0.24, EYE_Y = 0.215, MOUTH_Y = HC - 0.13;
+const HEAD_GEO = rboxGeo(0.5, 0.46, 0.44, 0.6, 3, 0.22);
+/* 量出脸表面在某个位置的前后深度，五官直接贴在表面上 */
+const faceZ = (() => {
+  const probe = new THREE.Mesh(HEAD_GEO); probe.position.set(0, HC, 0); probe.updateMatrixWorld(true);
+  const rc = new THREE.Raycaster(), o = new THREE.Vector3(), dir = new THREE.Vector3(0, 0, -1), cache = {};
+  return (x, y) => { const k = x.toFixed(3) + ',' + y.toFixed(3); if (k in cache) return cache[k]; rc.set(o.set(x, y, 2), dir); const h = rc.intersectObject(probe)[0]; return (cache[k] = h ? h.point.z : 0.24); };
+})();
+const FACE_Z = faceZ(0, EYE_Y);
+/* 造一个人：返回骨架、五官、材质，替身和同事都用它 */
+function makeRig(parent) {
+  const m = { skin: mat(0xffd2a8, FLAT), hoodie: mat(0x23252b, FLAT), hoodieD: mat(0x1a1c21, FLAT), pants: mat(0x1e2026, FLAT),
+    hairM: mat(0x3a2a20, FLAT), shoeM: mat(0x16171b, FLAT), shirtM: mat(0xf4f5f7, FLAT), tieM: mat(0x7a7f88, FLAT), beltM: mat(0x23284a, FLAT), browM: mat(0x3a2c27, FLAT) };
+  const r = { m, built: {} };
+  r.hips = group(0, 0.47, 0, parent); r.torso = group(0, 0, 0, r.hips); r.head = group(0, 0.4, 0, r.torso);
+  add(HEAD_GEO, m.skin, 0, HC, 0, r.head);
+  r.ears = [-1, 1].map(s => rb(0.05, 0.09, 0.07, m.skin, s * 0.25, 0.2, 0, r.head));
+  r.eyes = []; r.brows = [];
+  for (const s of [-1, 1]) {
+    const ex = s * 0.098, e = group(ex, EYE_Y, faceZ(ex, EYE_Y) - 0.004, r.head); e.rotation.y = s * 0.12;
+    add(new THREE.SphereGeometry(1, 10, 8), eyeM, 0, 0, 0, e).scale.set(0.024, 0.045, 0.012);
+    sph(0.0065, white, 0.008, 0.022, 0.011, e);
+    r.eyes.push(e);
+    const by = EYE_Y + 0.078, b = rb(0.105, 0.026, 0.03, m.browM, s * 0.1, by, faceZ(s * 0.1, by) - 0.006, r.head, { r: 0.7 });
+    b.rotation.y = s * 0.14; b.userData.s = s; b.userData.y0 = by; r.brows.push(b);
+  }
+  r.smileMesh = add(new THREE.TorusGeometry(0.018, 0.005, 6, 12, Math.PI), eyeM, 0, MOUTH_Y, faceZ(0, MOUTH_Y) + 0.002, r.head); r.smileMesh.rotation.z = Math.PI; r.smileMesh.visible = false;
+  r.openMesh = sph(0.026, mouthM, 0, MOUTH_Y, faceZ(0, MOUTH_Y) - 0.004, r.head); r.openMesh.scale.set(1, 0.8, 0.35); r.openMesh.visible = false;
+  r.hairG = look(r.head);
+  r.tuft = add(new THREE.ConeGeometry(0.035, 0.1, 5), m.hairM, 0.03, HC + 0.33, -0.04, r.head); r.tuft.rotation.z = -0.5;
+  r.chest = look(r.torso); r.hipLook = look(r.hips);
+  const arm = side => { const sh = group(0.21 * side, 0.33, 0, r.torso), el = group(0, -0.155, 0, sh), hand = group(0, -0.16, 0, el); return { sh, el, hand, s: side, lu: look(sh), ll: look(el), lh: look(hand) }; };
+  const leg = side => { const hp = group(0.085 * side, -0.01, 0, r.hips), kn = group(0, -0.2, 0, hp), an = group(0, -0.19, 0, kn); return { hp, kn, an, lu: look(hp), ll: look(kn), la: look(an) }; };
+  r.armA = arm(1); r.armB = arm(-1); r.legL = leg(1); r.legR = leg(-1);
+  return r;
+}
+/* 衣服款式 */
+const OUTFIT_DEF = { suit: 0x23252b, tee: 0x6f8fc7, hoodie: 0xffa63d, coat: 0xeef0f2 };
+function buildOutfit(r, kind) {
+  const { chest, hipLook, armA, armB, legL, legR } = r, { skin, hoodie, hoodieD, pants, shoeM, shirtM, tieM, beltM } = r.m;
+  for (const g of [chest, hipLook, armA.lu, armA.ll, armA.lh, armB.lu, armB.ll, armB.lh, legL.lu, legL.ll, legL.la, legR.lu, legR.ll, legR.la]) clearG(g);
+  const longSleeve = kind !== 'tee', shorts = kind === 'tee';
+  pants.color.setHex({ suit: 0x1e2026, tee: 0x5a4a3a, hoodie: 0x3b4a6b, coat: 0x193133 }[kind]);
+  shoeM.color.setHex(kind === 'hoodie' || kind === 'tee' ? 0xf2f2f2 : 0x16171b);
+  rb(0.36, 0.38, 0.22, hoodie, 0, 0.21, 0, chest, { tb: 0.14, r: 0.5 });
+  rb(0.27, 0.09, 0.18, pants, 0, 0.0, 0, hipLook, { r: 0.6 });
+  cyl(0.05, 0.055, 0.06, skin, 0, 0.4, 0, chest);
+  if (kind === 'suit' || kind === 'coat') {
+    const inner = kind === 'suit' ? shirtM : mat(0x45816f, FLAT);
+    const v = add(new THREE.ConeGeometry(0.075, 0.24, 3), inner, 0, 0.3, 0.103, chest); v.rotation.set(Math.PI, Math.PI, 0); v.scale.z = 0.18;
+    if (kind === 'suit') {
+      const t = add(new THREE.ConeGeometry(0.03, 0.2, 4), tieM, 0, 0.29, 0.112, chest); t.rotation.set(Math.PI, Math.PI / 4, 0); t.scale.z = 0.3;
+      rb(0.04, 0.03, 0.02, tieM, 0, 0.39, 0.108, chest);
+      rb(0.3, 0.035, 0.2, beltM, 0, 0.035, 0, chest, { r: 0.45 });
+    } else {
+      rb(0.4, 0.2, 0.25, hoodie, 0, -0.05, 0, chest, { tt: -0.05, r: 0.45 });
+      rb(0.07, 0.07, 0.02, mat(0xc8cdd4, FLAT), 0.1, 0.24, 0.115, chest);
+    }
+  } else if (kind === 'hoodie') {
+    rb(0.26, 0.12, 0.12, hoodieD, 0, 0.38, -0.1, chest, { r: 0.7 });
+    rb(0.18, 0.08, 0.02, hoodieD, 0, 0.1, 0.11, chest);
+    for (const s of [-1, 1]) cyl(0.006, 0.006, 0.1, white, s * 0.04, 0.31, 0.112, chest, 5);
+  } else {
+    rb(0.14, 0.03, 0.02, mat(0x5a74a8, FLAT), 0, 0.37, 0.108, chest, { r: 0.7 });
+  }
+  for (const a of [armA, armB]) {
+    lowSph(0.062, hoodie, 0, 0, 0, a.lu); limb(0.056, 0.052, 0.16, hoodie, a.lu);
+    if (longSleeve) { lowSph(0.052, hoodie, 0, 0, 0, a.ll); limb(0.052, 0.048, 0.13, hoodie, a.ll); rb(0.1, 0.035, 0.1, kind === 'suit' ? shirtM : hoodieD, 0, -0.135, 0, a.ll, { r: 0.6 }); }
+    else { lowSph(0.045, skin, 0, 0, 0, a.ll); limb(0.044, 0.04, 0.14, skin, a.ll); }
+    rb(0.09, 0.1, 0.075, skin, 0, -0.03, 0.005, a.lh, { r: 0.7 });
+    rb(0.03, 0.05, 0.035, skin, -a.s * 0.045, -0.005, 0.02, a.lh, { r: 0.7 }).rotation.z = a.s * 0.35;
+  }
+  const sole = shoeM.color.getHex() === 0xf2f2f2;
+  for (const l of [legL, legR]) {
+    lowSph(0.075, pants, 0, 0, 0, l.lu); limb(0.075, 0.066, 0.2, pants, l.lu);
+    if (shorts) { lowSph(0.052, skin, 0, 0, 0, l.ll); limb(0.052, 0.046, 0.19, skin, l.ll); }
+    else { lowSph(0.066, pants, 0, 0, 0, l.ll); limb(0.066, 0.058, 0.19, pants, l.ll); }
+    rb(0.11, 0.065, 0.17, shoeM, 0, -0.022, 0.03, l.la, { r: 0.55 });
+    if (sole) rb(0.115, 0.02, 0.175, mat(0x9aa4b8, FLAT), 0, -0.05, 0.03, l.la, { r: 0.4 });
+  }
+}
+/* 发型 */
+function buildHair(r, kind) {
+  const { hairG } = r, hairM = r.m.hairM;
+  clearG(hairG); r.tuft.visible = kind === 'short';
+  r.ears.forEach(e => { e.visible = kind === 'bald'; });
+  if (kind === 'bald') return;
+  rb(0.56, 0.3, 0.52, hairM, 0, HC + 0.16, -0.04, hairG, { r: 0.72 }).rotation.x = -0.45;
+  for (const s of [-1, 1]) rb(0.075, 0.2, 0.22, hairM, s * 0.255, HC + 0.04, -0.03, hairG, { r: 0.6, tb: 0.45 });
+  const fr = kind === 'long' ? [[-0.2, 0.12, 0.35], [-0.1, 0.12, 0.2], [0.0, 0.11, -0.1], [0.1, 0.12, -0.3], [0.2, 0.1, -0.45]]
+    : [[-0.2, 0.1, 0.4], [-0.1, 0.12, 0.25], [0.0, 0.11, 0.0], [0.1, 0.12, -0.25], [0.2, 0.1, -0.42]];
+  const up = new THREE.Vector3();
+  for (const [x, len, sw] of fr) {
+    const c = add(new THREE.ConeGeometry(0.068, len, 5), hairM, 0, 0, 0, hairG);
+    c.rotation.set(Math.PI - 0.32, 0, sw); up.set(0, 1, 0).applyEuler(c.rotation);
+    const by = HC + 0.19, bz = faceZ(x, by) + 0.015;
+    c.position.set(x + up.x * len / 2, by + up.y * len / 2, bz + up.z * len / 2);
+  }
+  if (kind === 'long') {
+    rb(0.47, 0.36, 0.12, hairM, 0, HC - 0.17, -0.18, hairG, { r: 0.55, tb: -0.08 });
+    for (const s of [-1, 1]) rb(0.055, 0.3, 0.15, hairM, s * 0.255, HC - 0.1, -0.02, hairG, { r: 0.55, tb: 0.2 });
+  } else if (kind === 'pony') {
+    lowSph(0.075, hairM, 0, HC + 0.14, -0.27, hairG);
+    rb(0.11, 0.3, 0.11, hairM, 0, HC - 0.04, -0.31, hairG, { r: 0.6, tb: 0.5 }).rotation.x = 0.25;
+  }
+}
+/* 换装：款式变了才重建，颜色每次都刷 */
+function dressRig(r, o) {
+  if (r.built.outfit !== o.outfit) { r.built.outfit = o.outfit; buildOutfit(r, o.outfit); }
+  if (r.built.hair !== o.hair) { r.built.hair = o.hair; buildHair(r, o.hair); }
+  r.m.hairM.color.setHex(o.hairHex); r.m.skin.color.setHex(o.skinHex);
+  const c = o.shirtHex ?? OUTFIT_DEF[o.outfit]; r.m.hoodie.color.setHex(c); r.m.hoodieD.color.setHex(c).multiplyScalar(0.8);
+}
+function applyRigPose(r, g) {
+  const hh = g('hip'); r.hips.position.set(g('hipX'), hh <= 0.5 ? hh - 0.03 : lerp(0.47, STAND_Y, (hh - 0.5) / 0.36), 0);
+  r.torso.rotation.set(g('tX'), g('tY'), g('tZ'));
+  r.head.rotation.set(g('hX'), g('hY'), g('hZ'));
+  r.armA.sh.rotation.set(g('aS'), g('aY'), g('aZ')); r.armA.el.rotation.x = g('aE'); r.armA.hand.rotation.x = g('aW');
+  r.armB.sh.rotation.set(g('bS'), g('bY'), g('bZ')); r.armB.el.rotation.x = g('bE'); r.armB.hand.rotation.x = g('bW');
+  r.legL.hp.rotation.set(g('lH'), 0, g('lZ')); r.legL.kn.rotation.x = g('lK'); r.legL.an.rotation.x = g('lA');
+  r.legR.hp.rotation.set(g('rH'), 0, g('rZ')); r.legR.kn.rotation.x = g('rK'); r.legR.an.rotation.x = g('rA');
+}
+/* 我的替身 */
+const me = makeRig(man);
+const { hips, torso, head, eyes, brows, smileMesh, openMesh, hairG, tuft, ears, chest, hipLook, armA, armB, legL, legR } = me;
+const { skin, hoodie, hoodieD, pants, hairM, shoeM, shirtM, tieM, beltM, browM } = me.m;
+const earSets = {}, blushM = skin;
+const hpM = mat(0x2a2f3a, { roughness: 0.35 }), hpGlow = new THREE.MeshStandardMaterial({ color: 0x66e0ff, emissive: 0x38c8ff, emissiveIntensity: 1.2 });
+let handA = armA.hand, handB = armB.hand, headRef = head;
+
+/* ---------- 姿势与弹簧 ---------- */
+const KEYS = ['hip', 'hipX', 'tX', 'tY', 'tZ', 'hX', 'hY', 'hZ', 'aS', 'aY', 'aZ', 'aE', 'aW', 'bS', 'bY', 'bZ', 'bE', 'bW', 'lH', 'lZ', 'lK', 'lA', 'rH', 'rZ', 'rK', 'rA'];
+const ZERO = Object.fromEntries(KEYS.map(k => [k, 0]));
+const SIT = { ...ZERO, hip: 0.5, lH: -1.5, rH: -1.5, lK: 1.5, rK: 1.5, aS: -0.6, aE: -1.1, bS: -0.6, bE: -1.1, tX: 0.06, hX: 0.08 };
+const STAND = { ...ZERO, hip: 0.86, aE: -0.15, aZ: 0.08, bE: -0.15, bZ: -0.08 };
+const S = (o = {}) => ({ ...SIT, ...o }), U = (o = {}) => ({ ...STAND, ...o });
+const cur = { ...SIT }, tgt = { ...SIT }, vel = { ...ZERO }, over = { ...ZERO };
+function applyPose() { applyRigPose(me, k => cur[k] + over[k]); }
+
+/* ---------- 屏幕内容 ---------- */
+const CODE = [
+  'function work(day) {', '  const tasks = load(day);', '  for (const t of tasks) {', '    if (t.done) continue;',
+  '    focus(t);', '    await coffee();', '    t.done = true;', '  }', '  return rest();', '}', '',
+  'const cube = new Glass(6);', 'cube.add(desk, me);', 'me.mood = "happy";', 'while (alive) {', '  type(); think();', '  stretch();', '}', '',
+  '// TODO: 下班', 'export default work;', ''
+];
+let screenMode = 0, typed = 0, screenClock = 0;   // 0 代码 1 图表 2 关闭
+function drawScreen(t) {
+  const W = 320, Hh = 192;
+  if (screenMode === 2) { sctx.fillStyle = '#05070c'; sctx.fillRect(0, 0, W, Hh); screenTex.needsUpdate = true; return; }
+  if (screenMode === 3) {
+    const sky = sctx.createLinearGradient(0, 0, 0, Hh); sky.addColorStop(0, '#ff9a8b'); sky.addColorStop(1, '#ffd59e');
+    sctx.fillStyle = sky; sctx.fillRect(0, 0, W, Hh);
+    sctx.fillStyle = '#fff3c4'; sctx.beginPath(); sctx.arc(240, 70 + Math.sin(t) * 4, 26, 0, 7); sctx.fill();
+    sctx.fillStyle = '#7a5cff'; sctx.beginPath(); sctx.moveTo(0, Hh);
+    for (let x = 0; x <= W; x += 16) sctx.lineTo(x, 130 + Math.sin(x * 0.03 + t * 0.8) * 16);
+    sctx.lineTo(W, Hh); sctx.fill();
+    sctx.fillStyle = '#2b3350'; sctx.fillRect(90 + Math.sin(t * 2) * 30, 108, 16, 34); sctx.beginPath(); sctx.arc(98 + Math.sin(t * 2) * 30, 100, 11, 0, 7); sctx.fill();
+    sctx.fillStyle = 'rgba(0,0,0,.55)'; sctx.fillRect(0, Hh - 16, W, 16);
+    sctx.fillStyle = '#ff4d6d'; sctx.fillRect(8, Hh - 9, ((t * 12) % (W - 16)), 3);
+    screenTex.needsUpdate = true; return;
+  }
+  sctx.fillStyle = '#0f1729'; sctx.fillRect(0, 0, W, Hh);
+  sctx.fillStyle = '#1b2742'; sctx.fillRect(0, 0, W, 18);
+  ['#ff5f57', '#febc2e', '#28c840'].forEach((c, i) => { sctx.fillStyle = c; sctx.beginPath(); sctx.arc(12 + i * 14, 9, 4, 0, 7); sctx.fill(); });
+  if (screenMode === 0) {
+    const total = CODE.reduce((s, l) => s + l.length + 1, 0);
+    let n = Math.floor(typed) % (total * 3), li = 0; const lines = [];
+    while (n >= 0) { const l = CODE[li % CODE.length]; if (n >= l.length + 1) { lines.push(l); n -= l.length + 1; li++; } else { lines.push(l.slice(0, n)); break; } }
+    const show = lines.slice(-9);
+    sctx.font = '14px Consolas, monospace'; sctx.textBaseline = 'top';
+    show.forEach((l, i) => {
+      sctx.fillStyle = l.trim().startsWith('//') ? '#6b7c9c' : /function|const|for|if|while|return|export|await/.test(l) ? '#8ec5ff' : '#d6e2ff';
+      sctx.fillText(l, 10, 26 + i * 18);
+    });
+    if (Math.floor(t * 2.5) % 2 === 0) { const last = show[show.length - 1] || ''; sctx.fillStyle = '#7dffb0'; sctx.fillRect(10 + sctx.measureText(last).width + 1, 26 + (show.length - 1) * 18, 7, 14); }
+  } else {
+    sctx.strokeStyle = '#26365c'; sctx.lineWidth = 1;
+    for (let i = 0; i < 5; i++) { sctx.beginPath(); sctx.moveTo(14, 40 + i * 32); sctx.lineTo(306, 40 + i * 32); sctx.stroke(); }
+    const cols = ['#4dabf7', '#69db7c', '#ffd43b', '#ff8787', '#b197fc', '#38d9a9', '#ffa94d', '#74c0fc'];
+    sctx.beginPath();
+    cols.forEach((c, i) => {
+      const h = 40 + 90 * (0.5 + 0.5 * Math.sin(t * 1.3 + i * 0.9));
+      sctx.fillStyle = c; sctx.fillRect(24 + i * 35, 178 - h, 22, h);
+      const y = 60 + 40 * Math.sin(t * 0.9 + i * 1.3); i ? sctx.lineTo(35 + i * 35, y) : sctx.moveTo(35, y);
+    });
+    sctx.strokeStyle = '#ffffff'; sctx.lineWidth = 2; sctx.stroke();
+  }
+  screenTex.needsUpdate = true;
+}
+
+/* ---------- 状态（精力 / 心情 / 任务） ---------- */
+const TASKS = ['写周报', '修 Bug #404', '回邮件', '做 PPT', '代码评审', '部署上线', '写文档', '开会纪要'];
+const st = { energy: 78, mood: 65, prog: 0, done: 0, shots: 0, hits: 0, task: 0 };
+const el = id => document.getElementById(id);
+const statusEl = el('status');
+const status = s => { statusEl.textContent = s; };
+function addNeed(e = 0, m = 0, p = 0) { st.energy = clamp(st.energy + e, 0, 100); st.mood = clamp(st.mood + m, 0, 100); st.prog = clamp(st.prog + p, 0, 100); }
+function drawHud() {
+  const s = save.stress;
+  el('bStress').style.width = s.toFixed(0) + '%';
+  el('bStress').style.background = s > 75 ? '#ff5d5d' : s > 45 ? '#ffb238' : '#38c8a0';
+  el('stressTxt').textContent = s > 80 ? '快憋坏了，让他替你发泄一下' : s > 50 ? '有点烦了' : s > 20 ? '还撑得住' : '神清气爽';
+  const n = save.diary.length;
+  el('doneTxt').textContent = n ? `今天他替你做了 ${n} 件你不敢做的事` : '今天他还什么都没替你做';
+  const d = new Date(), now = d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds(), wk = d.getDay();
+  const hm = v => { const [h, m] = (v || '').split(':').map(Number); return (h || 0) * 3600 + (m || 0) * 60; }, f2 = n => String(Math.floor(n)).padStart(2, '0');
+  const on = hm(save.onAt), off = hm(save.offAt), left = off - now;
+  let line = left > 0 ? `⏰ 距离下班 ${f2(left / 3600)}:${f2(left % 3600 / 60)}:${f2(left % 60)}` : `⏰ 已过下班时间 ${Math.floor(-left / 60)} 分钟，你还没走`;
+  if (wk >= 1 && wk <= 5) line += wk === 5 ? ' · 明天就是周末' : ` · 离周末 ${6 - wk} 天`;
+  el('realTxt').textContent = line;
+  if (save.pay > 0) {
+    const daily = save.pay / 21.75, span = Math.max(1, off - on), got = daily * clamp((now - on) / span, 0, 1), free = daily * save.slackSec / span;
+    el('payTxt').textContent = `💰 今天已到手 ¥${got.toFixed(2)} · 带薪摸鱼白赚 ¥${free.toFixed(2)}`;
+  } else el('payTxt').textContent = '';
+  if (!bossKeyOn) document.title = `${save.name || '我'}的替身`;
+}
+
+/* ---------- 行为系统 ---------- */
+let steps = [], step = null, stepT = 0, pending = null, lastAct = '', typeTimer = rand(5, 8);
+let walking = false, walkSpd = 1.3, walkPhase = 0, ringing = false, ringClock = 0, mugTilt = 0, mugTiltT = 0, plantW = 0;
+let seated = true, sleeping = false, wake = false, hoverMan = false, glance = 0, glanceTimer = 3, lastKey = 0;
+const held = { mug: false, phone: false, book: false, paper: false };
+const manPosT = new THREE.Vector2(-0.62, 0);
+const HOME_ROT = -Math.PI / 2;
+let rotT = HOME_ROT, chairT = -0.6;
+let lampOn = false, night = 0, nightK = 0;
+const idle = () => !step && !steps.length;
+
+function camYawLocal() { const v = man.worldToLocal(camera.position.clone()); return Math.atan2(v.x, v.z); }
+function faceCamRot() { const v = room.worldToLocal(camera.position.clone()); return Math.atan2(v.x - man.position.x, v.z - man.position.z); }
+
+function walk(pts, c = {}, speed = 1.3) {
+  let i = 0;
+  return {
+    pose: U({ aE: -0.4, bE: -0.4, tX: 0.07, ...c }),
+    start() { walking = true; walkSpd = speed; },
+    update(dt) {
+      const p = pts[i], dx = p[0] - man.position.x, dz = p[1] - man.position.z, d = Math.hypot(dx, dz), sl = speed * dt;
+      if (d <= sl) { man.position.x = p[0]; man.position.z = p[1]; i++; }
+      else { man.position.x += dx / d * sl; man.position.z += dz / d * sl; rotT = Math.atan2(dx, dz); }
+      manPosT.set(man.position.x, man.position.z);
+      if (i >= pts.length) { walking = false; return true; }
+      return false;
+    }
+  };
+}
+const OUT = [[-0.75, 0.85], [0.7, 0.9]], BACK = [[0.7, 0.9], [-0.75, 0.85], [-0.78, 0]];
+const standUp = (label, c = {}) => !seated ? [{ dur: 0.15, pose: U(c), start() { status(label); } }] : [
+  { dur: 0.3, pose: S({ tX: 0.38, hX: 0.15, ...c }), start() { status(label); } },
+  { dur: 0.7, pose: U({ tX: 0.1, ...c }), start() { seated = false; manPosT.set(-0.78, 0); chairT = -0.12; } },
+];
+const sitDown = (c = {}, fast = false) => [
+  { dur: fast ? 0.2 : 0.45, pose: U(c), start() { rotT = HOME_ROT; } },
+  { dur: fast ? 0.5 : 0.9, pose: S({ tX: 0.25, ...c }), start() { manPosT.set(-0.62, 0); chairT = -0.6; } },
+  { dur: fast ? 0.1 : 0.25, pose: S(c), start() { seated = true; } },
+];
+const REACH_A = S({ aS: -1.2, aZ: 0.42, aE: -0.2, tY: 0.18, tX: 0.14 });
+const REACH_B = S({ bS: -1.2, bZ: -0.42, bE: -0.2, tY: -0.18, tX: 0.14 });
+const EAR = S({ bS: -1.25, bZ: -0.45, bE: -2.2, hY: 0.15, hZ: -0.12, aS: -0.4, aE: -1.0 });
+const CARRY = { aS: -0.35, aE: -1.5, aY: -0.2 };
+const DRINK = { aS: -1.25, aE: -1.75, aY: -0.75, hX: -0.2 };
+const READ = U({ aS: -0.85, aE: -1.25, aY: -0.4, bS: -0.85, bE: -1.25, bY: 0.4, hX: 0.38, tX: 0.05 });
+const LIE = U({ hX: 0.32, hZ: 0.12, aZ: 0.22, bZ: -0.22, aE: -0.3, bE: -0.3 });
+const BEDSIDE = [-0.78, -1.2];
+const NAP = S({ tX: 0.85, hX: 0.25, hZ: 0.5, hY: 0.3, aS: -2.2, aE: -1.3, aY: -0.8, bS: -2.2, bE: -1.3, bY: 0.8 });
+const putMug = () => { held.mug = false; mug.position.copy(MUG_HOME); mug.rotation.set(0, 0, 0); sfx.click(); };
+const MUSIC = [262, 330, 392, 523, 392, 330, 294, 392, 349, 440, 523, 698, 523, 440, 392, 330];
+
+const scripts = {
+  sip: () => [
+    { dur: 0.5, pose: REACH_A, start() { status('☕ 喝口咖啡'); } },
+    { dur: 0.7, pose: S({ aS: -0.9, aE: -2.0, aY: -0.7, hX: 0.1 }), start() { held.mug = true; } },
+    { dur: 1.3, pose: S(DRINK), face: { closed: 1, smile: 0.4 }, start() { mugTiltT = 0.7; say('☕', 1.2); sfx.sip(); addNeed(32, 4); } },
+    { dur: 0.5, pose: S({ aS: -0.9, aE: -1.8, aY: -0.5 }), face: { smile: 1, open: 0.4 }, start() { mugTiltT = 0; } },
+    { dur: 0.6, pose: REACH_A },
+    { dur: 0.3, pose: S(), start: putMug },
+  ],
+  stretch: () => [
+    { dur: 0.6, pose: S({ aS: -2.6, bS: -2.6, aZ: 0.85, bZ: -0.85, aE: -0.9, bE: -0.9, tX: -0.1, hX: -0.25 }), face: { open: 0.6 }, start() { status('🙆 伸个懒腰'); sfx.yawn(); } },
+    { dur: 1.8, pose: S({ aS: -3.0, bS: -3.0, aZ: 0.75, bZ: -0.75, aE: -0.1, bE: -0.1, tX: -0.22, hX: -0.4, lK: 0.9, rK: 0.9, lH: -1.35, rH: -1.35 }), face: { closed: 1, open: 0.9 },
+      start() { say('😌', 1.6); addNeed(10, 8); }, update(dt, t) { over.aZ = Math.sin(t * 20) * 0.02; over.bZ = -over.aZ; } },
+    { dur: 0.5, pose: S(), face: { smile: 1 } },
+  ],
+  think: () => [
+    { dur: 3, pose: S({ bS: -1.1, bE: -1.75, bY: 0.75, hX: -0.15, hY: 0.3, hZ: 0.1, aS: -0.35, aE: -1.3, tX: -0.05 }), face: { brow: 0.8, smile: 0.1 },
+      start() { status('🤔 思考中'); say('🤔 …', 2.6); }, update(dt, t) { over.bW = Math.sin(t * 5) * 0.15; } },
+    { dur: 0.9, pose: S({ hX: -0.1, aS: -1.6, aE: -1.6, aZ: 0.2 }), face: { smile: 1, open: 0.5, brow: 1 }, start() { say('💡', 1.2); addNeed(0, 5, 8); sfx.beep(); } },
+  ],
+  phone: () => {
+    const good = Math.random() < 0.55;
+    return [
+      { dur: 1.5, pose: S({ hY: -0.55, hX: 0.15 }), face: { brow: 0.8, open: 0.3 }, start() { ringing = true; status('📞 电话响了'); say('❗', 1.2); } },
+      { dur: 0.5, pose: REACH_B },
+      { dur: 0.6, pose: EAR, ear: true, start() { ringing = false; held.phone = true; status('📞 接电话中'); sfx.click(); } },
+      { dur: 3.4, pose: EAR, ear: true, talk: true, face: good ? { smile: 1 } : { brow: -0.6 }, start() { say(good ? '哈哈哈，周末见！' : '好的老板…马上改', 3.2); },
+        update(dt, t) { over.hX = Math.sin(t * 5) * 0.07; over.aS = Math.sin(t * 3) * 0.25 - 0.3; over.aE = Math.sin(t * 3 + 1) * 0.3 - 0.3; over.aW = Math.sin(t * 6) * 0.3; } },
+      { dur: 0.6, pose: REACH_B, start() { addNeed(0, good ? 14 : -10); } },
+      { dur: 0.3, pose: S(), start() { held.phone = false; phone.position.copy(PHONE_HOME); phone.rotation.set(0, 0, 0); sfx.click(); } },
+    ];
+  },
+  shelf: () => [
+    ...standUp('📚 去书架找本书'),
+    walk([...OUT, [0.6, -1.62]]),
+    { dur: 0.4, pose: U(), start() { rotT = Math.PI; } },
+    { dur: 0.8, pose: U({ aS: -2.4, aZ: 0.6, aE: -0.3, hX: -0.35, tX: -0.06, hip: 0.9, lA: 0.3, rA: 0.3 }) },
+    { dur: 2.8, pose: READ, face: { brow: 0.3 }, start() { held.book = true; book.visible = true; say('📖', 2.4); status('📖 翻翻资料'); },
+      update(dt, t) { over.hY = Math.sin(t * 1.6) * 0.12; if (t % 1 < 0.2) over.aW = -0.5; } },
+    { dur: 0.6, pose: U({ aS: -0.85, aE: -1.25, aY: -0.4, bS: -0.2, hX: -0.15 }), face: { smile: 1, brow: 1 }, start() { say('💡 学到了', 1.2); addNeed(0, 8, 10); sfx.beep(); } },
+    { dur: 0.7, pose: U({ aS: -2.4, aZ: 0.6, aE: -0.3, hX: -0.35, hip: 0.9, lA: 0.3, rA: 0.3 }) },
+    { dur: 0.25, pose: U(), start() { held.book = false; book.visible = false; } },
+    walk(BACK), ...sitDown(),
+  ],
+  cooler: () => [
+    { dur: 0.5, pose: REACH_A, start() { status('💧 去接杯水'); } },
+    { dur: 0.4, pose: S(CARRY), start() { held.mug = true; } },
+    ...standUp('💧 去接杯水', CARRY),
+    walk([...OUT, [1.62, 0.6]], CARRY),
+    { dur: 0.4, pose: U(CARRY), start() { rotT = Math.PI / 2; } },
+    { dur: 1.7, pose: U({ aS: -1.15, aE: -0.45, hX: 0.3, tX: 0.12 }), start() { say('💧', 1.5); sfx.water(); } },
+    { dur: 1.3, pose: U(DRINK), face: { closed: 1 }, start() { mugTiltT = 0.7; sfx.sip(); addNeed(20, 6); } },
+    { dur: 0.4, pose: U(CARRY), face: { smile: 1, open: 0.4 }, start() { mugTiltT = 0; say('😋', 1); } },
+    walk(BACK, CARRY), ...sitDown(CARRY),
+    { dur: 0.55, pose: REACH_A },
+    { dur: 0.3, pose: S(), start: putMug },
+  ],
+  wave: () => {
+    const a = camYawLocal(), sw = clamp(a, -1.0, 1.0);
+    return [
+      { dur: 2.3, pose: S({ aS: 0, aZ: 2.5, aE: -0.5, hY: clamp(a - sw, -1.1, 1.1), hX: -0.12, hZ: 0.1, tX: -0.03 }), face: { smile: 1, open: 0.5, brow: 0.6 },
+        start() { status('👋 打招呼'); rotT = HOME_ROT + sw; say('👋 嗨！', 2); addNeed(0, 8); }, update(dt, t) { over.aZ = Math.sin(t * 11) * 0.28; over.aW = Math.sin(t * 11) * 0.3; } },
+      { dur: 0.5, pose: S(), start() { rotT = HOME_ROT; } },
+    ];
+  },
+  spin: () => [
+    { dur: 0.6, pose: S({ lK: 1.0, rK: 1.0, tX: -0.05, aS: -1.0, bS: -1.0, aE: -0.3, bE: -0.3 }), start() { status('🌀 转椅子'); manPosT.set(-0.2, 0); chairT = -0.18; } },
+    { dur: 2.8, pose: S({ aS: -2.7, bS: -2.7, aZ: 0.85, bZ: -0.85, aE: -0.3, bE: -0.3, lK: 0.6, rK: 0.6, lH: -1.4, rH: -1.4, tX: -0.18, hX: -0.25 }), face: { smile: 1, open: 0.9, closed: 1 },
+      start() { say('🌀 呜呼～', 2.4); sfx.whoosh(); },
+      update(dt, t) { const u = Math.min(1, t / 2.8), e = u * u * (3 - 2 * u); man.rotation.y = rotT = HOME_ROT + e * Math.PI * 4; } },
+    { dur: 0.9, pose: S({ hZ: 0.2 }), face: { open: 0.4, brow: -0.5 }, start() { man.rotation.y = rotT = HOME_ROT; say('😵', 0.9); addNeed(-3, 22); },
+      update(dt, t) { over.hZ = Math.sin(t * 9) * 0.2; over.hY = Math.cos(t * 9) * 0.2; over.tZ = Math.sin(t * 9) * 0.06; } },
+    { dur: 0.6, pose: S(), start() { manPosT.set(-0.62, 0); chairT = -0.6; } },
+  ],
+  dance: () => [
+    ...standUp('💃 跳舞时间'),
+    walk([...OUT, [1.0, 0.4]]),
+    { dur: 0.4, pose: U(), start() { rotT = faceCamRot(); } },
+    { dur: 6.4, pose: U(), face: { smile: 1, closed: 0.7, open: 0.4 }, start() { say('🎵', 2); this.beat = -1; },
+      update(dt, t) {
+        const b = Math.floor(t / 0.2);
+        if (b !== this.beat) { this.beat = b; tone(MUSIC[b % 16], 0.18, 'triangle', 0.09); if (b % 4 === 0) tone(b % 8 ? 175 : 131, 0.3, 'sine', 0.14); if (b % 2) tone(6000, 0.03, 'square', 0.012); }
+        const w = t * Math.PI * 5, s = Math.sin(w), k = 0.22 + 0.22 * Math.abs(Math.sin(w));
+        over.lH = over.rH = -k; over.lK = over.rK = 2 * k; over.lA = over.rA = -k; over.hip = -0.82 * (1 - Math.cos(k));
+        over.hipX = s * 0.05; over.tZ = s * 0.1; over.hZ = -s * 0.14;
+        if (t % 3.2 < 1.6) {
+          over.aS = -2.2 - s * 0.5; over.aE = -0.8 + s * 0.4; over.bS = -2.2 + s * 0.5; over.bE = -0.8 - s * 0.4; over.tY = s * 0.2; over.aZ = 0.6; over.bZ = -0.6;
+        } else {
+          const m = (s + 1) / 2;
+          over.aS = lerp(-0.8, -2.7, m); over.aZ = lerp(-0.5, 0.8, m); over.bS = -0.3; over.bZ = -0.55; over.bE = -1.6; over.tY = s * 0.35; over.hY = -s * 0.3;
+        }
+      } },
+    { dur: 0.6, pose: U({ aS: -2.8, aZ: 0.85, bS: -2.8, bZ: -0.85 }), face: { smile: 1, open: 0.8 }, start() { addNeed(-6, 36); say('😆', 0.9); sfx.win(); } },
+    walk(BACK), ...sitDown(),
+  ],
+  toss: () => [
+    { dur: 0.8, pose: S({ aS: -0.9, aE: -1.6, aY: -0.6, bS: -0.9, bE: -1.6, bY: 0.6, hX: 0.25 }), start() { status('🏀 投个纸团'); held.paper = true; paper.visible = true; },
+      update(dt, t) { over.aE = Math.sin(t * 22) * 0.1; over.bE = -over.aE; } },
+    { dur: 0.65, pose: S({ aS: -0.9, aE: -1.7, bS: -0.5, bE: -0.9 }), face: { brow: -0.4 }, start() { rotT = Math.atan2(BIN[0] - man.position.x, BIN[1] - man.position.z); } },
+    { dur: 0.45, pose: S({ aS: -2.7, aZ: 0.7, aE: -2.0, tX: -0.16, bS: -1.2, bE: -0.4, hX: -0.1 }), face: { brow: -0.4 } },
+    { dur: 0.16, pose: S({ aS: -1.5, aE: -0.15, aW: 0.6, tX: 0.25 }) },
+    { pose: S({ aS: -1.2, aE: -0.25, aW: 0.8, tX: 0.2, hX: -0.1 }), face: { open: 0.4, brow: 0.8 }, start() {
+        held.paper = false; ball.flying = true; ball.u = 0; ball.hit = Math.random() < 0.5 + st.mood / 300; st.shots++;
+        room.worldToLocal(handA.getWorldPosition(ball.p0));
+        if (ball.hit) ball.p1.set(BIN[0], 0.45, BIN[1]); else ball.p1.set(rand(1.0, 1.7), 0.05, rand(0.9, 2.1));
+        sfx.whoosh();
+      }, update() { return !ball.flying; } },
+    { dur: 1.3, start() {
+        if (ball.hit) { st.hits++; Object.assign(tgt, S({ aS: -2.8, aZ: 0.8, aE: -1.0, bS: -2.8, bZ: -0.8, bE: -1.0, tX: -0.1 })); say('🏀 进了！', 1.2); sfx.win(); addNeed(0, 16); this.face = { smile: 1, open: 0.8, closed: 1 }; }
+        else { Object.assign(tgt, S({ hX: 0.45, tX: 0.2, aS: -0.2, aE: -0.3, bS: -0.2, bE: -0.3 })); say('😅 差一点', 1.2); sfx.miss(); addNeed(0, 4); this.face = { brow: -0.8 }; }
+      }, update(dt, t) { if (ball.hit) over.hip = Math.abs(Math.sin(t * 9)) * 0.04; } },
+    { dur: 0.6, pose: S(), start() { rotT = HOME_ROT; } },
+  ],
+  celebrate: () => [
+    { dur: 2.3, pose: S({ aS: -2.8, bS: -2.8, aZ: 0.85, bZ: -0.85, aE: -0.6, bE: -0.6, tX: -0.1, hX: -0.2 }), face: { smile: 1, open: 0.9, closed: 1 },
+      start() { status('🎉 开心'); say('🎉', 2); addNeed(0, 15); },
+      update(dt, t) { over.hip = Math.abs(Math.sin(t * 9)) * 0.05; over.aE = Math.sin(t * 18) * 0.4; over.bE = over.aE; } },
+    { dur: 0.4, pose: S() },
+  ],
+  arcade: () => {
+    const win = Math.random() < 0.6;
+    return [
+      ...standUp('🕹️ 去打一局'),
+      walk([[-0.75, 0.85], [-0.8, 1.55], [-1.72, 2.0]]),
+      { dur: 0.4, pose: U(), start() { rotT = -Math.PI / 2; } },
+      { dur: 5, pose: U({ aS: -1.0, aE: -0.75, aY: -0.2, bS: -1.0, bE: -0.75, bY: 0.2, tX: 0.12, hX: 0.1 }), face: { brow: -0.3, open: 0.2 },
+        start() { arcPlaying = true; say('🕹️', 2); status('🕹️ 打游戏中'); this.b = 0; },
+        update(dt, t) {
+          over.aE = Math.sin(t * 19) * 0.12; over.bS = Math.sin(t * 7) * 0.12; over.bW = Math.sin(t * 23) * 0.4; over.aW = Math.sin(t * 17) * 0.4;
+          over.tZ = Math.sin(t * 3.3) * 0.08; over.hipX = Math.sin(t * 3.3) * 0.03; over.hZ = Math.sin(t * 3.3) * 0.08;
+          this.b -= dt; if (this.b <= 0) { tone(pickOne([440, 660, 880, 990]), 0.06, 'square', 0.03); this.b = rand(0.12, 0.35); }
+        } },
+      { dur: 1.4, pose: U(win ? { aS: -2.8, aZ: 0.85, bS: -2.8, bZ: -0.85, hX: -0.2 } : { hX: 0.45, tX: 0.2 }), face: win ? { smile: 1, open: 0.8, closed: 1 } : { brow: -0.8, open: 0.3 },
+        start() { arcPlaying = false; say(win ? '🏆 新纪录！' : '💥 再来一局…', 1.3); win ? sfx.win() : sfx.miss(); addNeed(-4, win ? 30 : 18); },
+        update(dt, t) { if (win) over.hip = Math.abs(Math.sin(t * 9)) * 0.05; } },
+      walk([[-0.8, 1.55], [-0.75, 0.85], [-0.78, 0]]), ...sitDown(),
+    ];
+  },
+  f_scroll: () => [
+    { dur: 0.4, pose: REACH_B },
+    { pose: S({ bS: -0.55, bE: -1.5, bY: 0.55, aS: -0.55, aE: -1.45, aY: -0.5, hX: 0.42, tX: 0.16 }), face: { smile: 1 },
+      start() { held.phone = true; slackOn('📱 偷偷刷手机'); },
+      update(dt, t) { over.aW = Math.sin(t * 9) * 0.3; over.hZ = Math.sin(t * 1.2) * 0.06; return lobbyEnd(t); } },
+  ],
+  f_video: () => [
+    { dur: 0.35, pose: S({ aS: -1.0, aE: -0.6 }), start() { sfx.click(); } },
+    { pose: S({ tX: -0.28, hX: 0.05, aS: -2.5, aZ: 1.0, aE: -2.3, bS: -2.5, bZ: -1.0, bE: -2.3, lK: 1.0, rK: 1.0, lH: -1.35, rH: -1.35 }), face: { smile: 1 },
+      start() { screenMode = 3; slackOn('📺 上班看剧'); },
+      update(dt, t) { const l = Math.sin(t * 1.1) > 0.5; this.face = l ? { smile: 1, open: 0.7, closed: 1 } : { smile: 1 }; if (l) over.tX = Math.sin(t * 14) * 0.03; return lobbyEnd(t); } },
+  ],
+  f_nap: () => [
+    { dur: 0.8, pose: NAP, face: { closed: 1 } },
+    { pose: NAP, face: { closed: 1, smile: 0.4 }, start() { slackOn('😴 趴桌睡'); this.z = 0.3; },
+      update(dt, t) { over.tX = Math.sin(t * 1.6) * 0.03; this.z -= dt; if (this.z <= 0) { say('💤', 1.5); this.z = 2.4; } return lobbyEnd(t); } },
+  ],
+  f_cooler: () => [
+    ...standUp('💧 溜去茶水间'),
+    walk(seated ? [...OUT, [1.62, 0.6]] : [[1.62, 0.6]]),
+    { dur: 0.3, pose: U(), start() { rotT = Math.PI / 2; } },
+    { pose: U({ bS: -1.1, bE: -0.9, bY: 0.2, aZ: 0.5, aE: -1.4, hX: 0.05 }), face: { smile: 1 }, start() { slackOn('💧 茶水间闲逛'); say('☕ 慢慢接水', 1.5); sfx.water(); },
+      update(dt, t) { over.hY = Math.sin(t * 0.8) * 0.35; over.hipX = Math.sin(t * 1.1) * 0.03; over.tZ = Math.sin(t * 1.1) * 0.04; return lobbyEnd(t); } },
+  ],
+  f_arcade: () => [
+    ...standUp('🕹️ 溜去打街机'),
+    walk(seated ? [[-0.75, 0.85], [-0.8, 1.55], [-1.72, 2.0]] : [[-1.72, 2.0]]),
+    { dur: 0.3, pose: U(), start() { rotT = -Math.PI / 2; } },
+    { pose: U({ aS: -1.0, aE: -0.75, aY: -0.2, bS: -1.0, bE: -0.75, bY: 0.2, tX: 0.12, hX: 0.1 }), face: { brow: -0.3, open: 0.2, smile: 1 },
+      start() { arcPlaying = true; slackOn('🕹️ 打街机'); this.b = 0; },
+      update(dt, t) {
+        over.aE = Math.sin(t * 19) * 0.12; over.bS = Math.sin(t * 7) * 0.12; over.bW = Math.sin(t * 23) * 0.4; over.aW = Math.sin(t * 17) * 0.4;
+        over.tZ = Math.sin(t * 3.3) * 0.08; over.hipX = Math.sin(t * 3.3) * 0.03; over.hZ = Math.sin(t * 3.3) * 0.08;
+        this.b -= dt; if (this.b <= 0) { tone(pickOne([440, 660, 880, 990]), 0.06, 'square', 0.03); this.b = rand(0.12, 0.35); }
+        return lobbyEnd(t);
+      } },
+  ],
+  f_bed: () => [
+    ...standUp('🛋️ 溜去沙发'),
+    walk([BEDSIDE]),
+    { dur: 1.3, pose: LIE, face: { closed: 1 }, start() { lying = true; manPosT.set(BED.x0 + 0.03, BED.z); rotT = Math.PI / 2; } },
+    { pose: LIE, face: { closed: 1, smile: 0.5 }, start() { sleeping = true; slackOn('🛋️ 带薪睡觉'); this.z = 0.4; },
+      update(dt, t) { over.hZ = Math.sin(t * 1.5) * 0.04; this.z -= dt; if (this.z <= 0) { say('💤', 1.5); this.z = 2.4; } return lobbyEnd(t); } },
+  ],
+  roast: () => {
+    const lines = ['这个需求今晚做不完！', '周末别给我发消息！', 'PPT 已经改了八版了！', '加班费呢？！', '你行你上啊！', '开会能不能说重点！', '工资不涨活倒是涨了！'].sort(() => Math.random() - 0.5).slice(0, 3);
+    const pt = (o = {}) => U({ aS: -1.45, aE: -0.08, bZ: -0.55, bE: -1.5, tX: 0.16, hX: -0.05, ...o });
+    return [
+      { dur: 1.0, pose: S({ hY: 0.5, aS: -2.2, aZ: 0.85, aE: -0.6 }), face: { brow: -0.8, open: 0.6 }, start() { status(`😤 把${B()}叫进来`); say(`${B()}！你进来一下！`, 1.6); bossEnter(); } },
+      ...standUp('😤 准备开怼'),
+      { pose: U({ bZ: -0.5, bE: -1.5, aZ: 0.5, aE: -1.5 }), face: { brow: -0.9 }, start() { faceBoss(); }, update() { faceBoss(); return !boss.tgt; } },
+      ...lines.map((ln, i) => ({ dur: 2.0, pose: pt(), talk: true, face: { brow: -1, open: 0.5 },
+        start() { say(ln, 1.9); status('😤 当面开怼'); boss.scaleT = [0.86, 0.72, 0.58][i]; boss.shake = 1; this.r = 0; },
+        update(dt, t) { faceBoss(); over.aS = Math.sin(t * 16) * 0.12; over.tX = Math.sin(t * 16) * 0.03; if (!this.r && t > 0.9) { this.r = 1; bossBub.say(['…啊？', '对、对不起', '好的好的好的'][i], 1.3); } } })),
+      { dur: 1.0, pose: pt({ aS: -1.6 }), face: { brow: -1, open: 0.7 }, start() { say('出去！', 0.9); bossLeave(true); sfx.whoosh(); } },
+      { dur: 1.5, pose: U({ aS: -2.8, aZ: 0.85, bS: -2.8, bZ: -0.85 }), face: { smile: 1, open: 0.8, closed: 1 }, start() { say('😤 爽！', 1.3); sfx.win(); rotT = faceCamRot(); }, update(dt, t) { over.hip = Math.abs(Math.sin(t * 9)) * 0.05; } },
+      ...sitDown(),
+    ];
+  },
+  flip: () => [
+    ...standUp('😡 忍不了了'),
+    { dur: 0.55, pose: U({ tX: 0.75, aS: -0.9, bS: -0.9, aE: -0.3, bE: -0.3, lK: 0.9, rK: 0.9, lH: -0.6, rH: -0.6, hip: 0.72 }), face: { brow: -1 }, start() { say('去你的 KPI！', 1.6); } },
+    { dur: 1.2, pose: U({ tX: -0.2, aS: -2.7, bS: -2.7, aZ: 0.6, bZ: -0.6 }), face: { brow: -1, open: 0.9 }, start() { sfx.whoosh(); status('🪑 掀桌！'); this.b = 0; },
+      update(dt, t) {
+        const u = Math.min(1, t / 0.9), e = u * u * (3 - 2 * u), arc = Math.sin(u * Math.PI);
+        deskG.position.set(-1.5 - e * 0.6, arc * 0.9 + e * 0.62, 0); deskG.rotation.z = e * 2.75;
+        if (u > 0.7) monitor.visible = lamp.visible = false;
+        mug.position.set(MUG_HOME.x - e * 1.0, Math.max(0.06, MUG_HOME.y + arc * 1.3 - e * 0.66), MUG_HOME.z + e * 0.7); mug.rotation.set(e * 4, 0, e * 5);
+        phone.position.set(PHONE_HOME.x - e * 0.8, Math.max(0.02, PHONE_HOME.y + arc * 1.1 - e * 0.71), PHONE_HOME.z - e * 0.6); phone.rotation.set(e * 6, e * 3, 0);
+        if (u >= 1 && !this.b) { this.b = 1; sfx.miss(); tone(70, 0.3, 'sine', 0.2); burst('confetti', -2.0, ROOM_Y + 0.7, 0); shakeT = 0.5; }
+      } },
+    { dur: 2.2, pose: U({ bZ: -0.55, bE: -1.5, aZ: 0.55, aE: -1.5 }), face: { smile: 1 }, start() { say('舒服了。', 1.8); rotT = faceCamRot(); } },
+    { dur: 0.7, pose: U(), start() { resetDesk(); sfx.pop(); toast('保洁阿姨默默把桌子扶好了'); rotT = HOME_ROT; }, update(dt, t) { const k = Math.min(1, t / 0.4); deskG.scale.setScalar(0.3 + 0.7 * k); } },
+    ...sitDown(),
+  ],
+  smash: () => [
+    { dur: 0.6, pose: S({ aS: -1.0, bS: -1.0, aE: -0.6, bE: -0.6, tX: 0.22 }), face: { brow: -1 }, start() { status('💢 摔键盘'); say('又改需求？！', 1.4); } },
+    { dur: 0.6, pose: S({ aS: -2.9, bS: -2.9, aZ: 0.5, bZ: -0.5, aE: -0.4, bE: -0.4, tX: -0.2 }), face: { brow: -1, open: 0.8 }, start() { held.kbd = true; } },
+    { dur: 0.22, pose: S({ aS: -0.9, bS: -0.9, aE: -0.3, bE: -0.3, tX: 0.45 }), face: { brow: -1, open: 1 } },
+    { dur: 1.7, pose: S({ aS: -0.5, bS: -0.5, aE: -0.9, bE: -0.9, tX: 0.2 }), face: { brow: -0.6 },
+      start() { held.kbd = false; kbd.position.copy(KBD_HOME); kbd.rotation.set(0, 0.5, 0.18); burst('confetti', -1.15, ROOM_Y + 0.9, 0); shakeT = 0.45; sfx.miss(); tone(80, 0.25, 'sine', 0.2); say('💢', 1); } },
+    { dur: 1.2, pose: S({ hX: 0.3 }), face: { brow: 0.5 }, start() { kbd.rotation.set(0, 0, 0); say('…还得用它干活', 1.4); } },
+  ],
+  tear: () => [
+    { dur: 0.9, pose: S({ aS: -0.9, aE: -1.3, aY: -0.4, bS: -0.9, bE: -1.3, bY: 0.4, hX: 0.3 }), face: { brow: -0.6 }, start() { status('📄 撕周报'); sheetK = 0; held.sheet = true; say('这周报谁爱写谁写', 1.6); } },
+    { dur: 0.55, pose: S({ aS: -1.0, aE: -1.2, aY: 0.4, aZ: 0.55, bS: -1.0, bE: -1.2, bY: -0.4, bZ: -0.55, hX: 0.15 }), face: { brow: -0.9, open: 0.5 }, start() { sfx.whoosh(); tone(2400, 0.2, 'sawtooth', 0.03, 0, -1500); }, update(dt, t) { sheetK = Math.min(1, t / 0.35); } },
+    { dur: 1.6, pose: S({ aS: -2.7, aZ: 0.9, bS: -2.7, bZ: -0.9, hX: -0.3 }), face: { smile: 1, open: 0.7, closed: 1 },
+      start() { held.sheet = false; sheet.visible = false; room.worldToLocal(headRef.getWorldPosition(tmpV)); paperBits(tmpV.x, ROOM_Y + tmpV.y + 0.5, tmpV.z); say('🎊 天女散花', 1.4); } },
+    { dur: 0.4, pose: S() },
+  ],
+  scream: () => [
+    { dur: 0.6, pose: S({ tX: 0.3, hX: 0.3, aS: -0.8, bS: -0.8 }), face: { closed: 1, brow: -1 }, start() { status('🗣️ 深吸一口气'); } },
+    { dur: 2.3, pose: S({ tX: -0.3, hX: -0.45, aS: -1.2, aZ: 1.1, aE: -0.3, bS: -1.2, bZ: -1.1, bE: -0.3 }), face: { open: 1.2, closed: 1, brow: -1 },
+      start() { say('啊————————！！！', 2.2); shakeT = 1.3; status('🗣️ 啊——'); tone(520, 2.0, 'sawtooth', 0.06, 0, 260); },
+      update(dt, t) { over.tZ = Math.sin(t * 38) * 0.03; over.hZ = Math.sin(t * 34) * 0.05; if (t < 1.6) shakeT = Math.max(shakeT, 0.6); } },
+    { dur: 1.3, pose: S({ tX: 0.15 }), face: { smile: 1 }, start() { say('呼…好多了', 1.3); } },
+  ],
+  spaceout: () => [
+    { dur: 9, pose: S({ tX: -0.3, hX: -0.35, hZ: 0.15, aS: -0.1, aE: -0.2, aZ: 0.25, bS: -0.1, bE: -0.2, bZ: -0.25, lK: 1.0, rK: 1.0, lH: -1.3, rH: -1.3 }), face: { smile: 0.2, closed: 0.5 },
+      start() { status('🫥 发呆中'); say('…', 2); this.n = 3; },
+      update(dt, t) { over.hZ = Math.sin(t * 0.6) * 0.06; this.n -= dt; if (this.n <= 0) { say(pickOne(['…', '（灵魂出窍）', '今晚吃啥', '☁️', '人为什么要上班']), 2); this.n = 3.2; } } },
+    { dur: 0.5, pose: S() },
+  ],
+  leave: () => [
+    ...(seated ? [{ dur: 1.0, pose: S({ aS: -3.0, bS: -3.0, aZ: 0.75, bZ: -0.75, tX: -0.2 }), face: { smile: 1, closed: 1, open: 0.6 }, start() { status('🕕 到点下班'); say('到点了，下班！', 1.6); } },
+    { dur: 0.4, pose: S({ aS: -1.2, aE: -0.3 }), start() { screenMode = 2; sfx.click(); } }] : []),
+    ...standUp('🕕 到点下班'),
+    walk(seated ? [[-0.75, 0.85], [0.7, 0.9], [1.6, -1.2], [1.75, -1.9]] : [[1.75, -1.9]]),
+    { dur: 1.5, pose: U({ aS: 0, aZ: 2.5, aE: -0.5 }), face: { smile: 1, open: 0.5 }, start() { rotT = faceCamRot(); doorOpen = true; say('明天见，明天也准点走', 1.5); }, update(dt, t) { over.aZ = Math.sin(t * 11) * 0.28; } },
+    walk([[1.75, -2.6]], {}, 1.6),
+    ...awaySteps('🏃 已下班 · 工位空了', 12, '现实的你还没走，所以他又被叫回来了'),
+  ],
+  resign: () => [
+    { dur: 1.6, pose: S({ tX: 0.2 }), face: { brow: -0.6 }, start() { status('✍️ 写辞职信'); say('辞 职 信', 1.5); }, update(dt, t) { over.aE = Math.sin(t * 40) * 0.12; over.bE = Math.sin(t * 43 + 1) * 0.12; } },
+    { dur: 0.7, pose: S({ aS: -1.2, aE: -1.0, hX: -0.1 }), face: { brow: -0.8 }, start() { sheetK = 0; held.sheet = 'A'; bossEnter(); say(`${B()}，我有话说`, 1.5); } },
+    ...standUp('✉️ 递辞职信', { aS: -1.0, aE: -1.2 }),
+    walk([[-0.75, 0.85], [-0.35, 0.92]], { aS: -1.0, aE: -1.2 }),
+    { pose: U({ aS: -1.0, aE: -1.2 }), start() { faceBoss(); }, update() { faceBoss(); return !boss.tgt; } },
+    { dur: 0.35, pose: U({ aS: -2.5, aE: -1.6, tX: -0.1 }), face: { brow: -1 } },
+    { dur: 0.3, pose: U({ aS: -1.5, aE: -0.05, tX: 0.25 }), face: { brow: -1, open: 0.8 }, start() { say('老子不干了！', 1.7); sfx.whoosh(); } },
+    { dur: 1.9, pose: U({ bZ: -0.55, bE: -1.5, aZ: 0.3 }), face: { smile: 1 }, start() { held.sheet = 'boss'; boss.shake = 1.4; bossBub.say('？！', 1.5); sfx.miss(); status('🕊️ 辞职了'); } },
+    { dur: 0.1, start() { doorOpen = true; } },
+    walk([[-0.3, 1.6], [0.9, 1.5], [1.6, -1.2], [1.75, -2.6]], {}, 1.6),
+    ...awaySteps('🕊️ 辞职了 · 自由了', 12, '现实的你没辞，所以他又回来上班了', function (t) {
+      if (!this.a && t > 0.6) { this.a = 1; bossBub.say('别走啊…', 1.8); }
+      if (!this.b && t > 3) { this.b = 1; held.sheet = false; sheet.visible = false; bossLeave(false); }
+    }),
+  ],
+  beach: () => [
+    { dur: 1.3, pose: S({ aS: -2.8, aZ: 0.85, bS: -2.8, bZ: -0.85, tX: -0.15 }), face: { smile: 1, open: 0.8 }, start() { status('🏖️ 请假去海边'); say('请假！去海边！', 1.3); } },
+    { pose: U({ hX: 0.32, aS: -2.6, aZ: 1.0, aE: -2.3, bS: -2.6, bZ: -1.0, bE: -2.3, lZ: 0.08, rZ: -0.08 }), face: { smile: 1 },
+      start() {
+        flash(); setBeach(true); seated = false; lying = true; shades.visible = true; callBack = false;
+        man.position.set(0.9, 0, 0.7); manPosT.set(0.9, 0.7); man.rotation.y = rotT = Math.PI / 2;
+        status('🏖️ 在海边躺着'); this.n = 1.2;
+      },
+      update(dt, t) { this.n -= dt; if (this.n <= 0) { say(pickOne(['🌊', '不回消息', '这才是生活', '🍹', '手机已静音', '周报是什么']), 2); this.n = 3.5; } return callBack || t > 14; } },
+    { dur: 0.5, pose: U(), start() {
+        flash(); setBeach(false); shades.visible = false; lying = false; callBack = false;
+        man.position.set(-0.78, 0, 0); manPosT.set(-0.78, 0); manY = 0; man.rotation.x = 0; man.rotation.y = rotT = HOME_ROT;
+        toast('假期结束。现实的你一天假都没请'); status('🚶 又回来了');
+      } },
+    ...sitDown(),
+  ],
+  proxy: () => [
+    { dur: 1.1, pose: S({ hY: 0.3, hX: -0.1 }), face: { brow: 0.8 }, start() { status('🫡 收到'); say(`「${proxyText}」？`, 1.2); } },
+    { dur: 2.1, pose: S({ aS: -2.6, aZ: 0.7, aE: -0.9, tX: -0.05 }), face: { smile: 1, open: 0.5 }, start() { say('包在我身上，替你办了！', 1.9); sfx.beep(); }, update(dt, t) { over.aE = Math.sin(t * 10) * 0.2; } },
+    { dur: 0.4, pose: S() },
+  ],
+  dizzy: () => [
+    { dur: 1.7, pose: S({ aS: -1.05, aE: -0.5, bS: -1.05, bE: -0.5, tX: 0.22 }), face: { open: 0.8, brow: 0.9 }, start() { status('😵 地震了？！'); say('😵 地震啦？！', 1.5); },
+      update(dt, t) { over.hZ = Math.sin(t * 20) * 0.15; over.tZ = Math.sin(t * 17) * 0.08; } },
+    { dur: 0.4, pose: S() },
+  ],
+  sleep: () => [
+    { dur: 1.5, pose: S({ aS: -2.6, aZ: 0.8, bS: -0.8, aE: -1.4, bE: -1.9, bY: 0.6, tX: -0.1, hX: -0.3 }), face: { closed: 1, open: 1 }, start() { status('🥱 好困…去睡会儿'); say('🥱', 1.3); sfx.yawn(); } },
+    ...standUp('🥱 好困…去睡会儿', { hX: 0.25 }),
+    walk([BEDSIDE], { hX: 0.25, tX: 0.15 }),
+    { dur: 1.4, pose: LIE, face: { closed: 1 }, start() { lying = true; manPosT.set(BED.x0 + 0.03, BED.z); rotT = Math.PI / 2; } },
+    { pose: LIE, face: { closed: 1, smile: 0.5 }, start() { sleeping = true; wake = false; status('😴 睡着了（点他叫醒）'); this.z = 0.6; },
+      update(dt, t) { st.energy = Math.min(100, st.energy + 9 * dt); over.hZ = Math.sin(t * 1.5) * 0.04; this.z -= dt; if (this.z <= 0) { say('💤', 1.5); this.z = 2.2; } return wake || (st.energy >= 88 && t > 4); } },
+    { dur: 1.1, pose: U({ hX: -0.1 }), face: { open: 0.6, brow: 1 }, start() { sleeping = false; lying = false; manPosT.set(BEDSIDE[0], BEDSIDE[1]); rotT = 0; say(wake ? '😳 谁叫我？' : '😀 满血复活', 1.2); addNeed(0, wake ? -5 : 10); wake = false; } },
+    { dur: 1.2, pose: U({ aS: -3.0, bS: -3.0, aZ: 0.75, bZ: -0.75, tX: -0.15, hX: -0.3, hip: 0.9, lA: 0.3, rA: 0.3 }), face: { closed: 1, open: 0.8 } },
+    walk([[-0.78, 0]]), ...sitDown(),
+  ],
+};
+const AUTO = ['sip', 'stretch', 'think', 'think', 'phone'];
+function startAct(name) { lastAct = name; steps = scripts[name](); step = null; }
+function homePath() {
+  const x = man.position.x, z = man.position.z;
+  if (Math.hypot(x + 0.78, z) < 0.35) return [[-0.78, 0]];
+  if (z < -0.3 && x < -0.3) return [[-0.78, 0]];
+  if (z > 1.2 && x < -0.5) return [[-0.8, 1.55], [-0.75, 0.85], [-0.78, 0]];
+  if (x > 0) return [[0.7, 0.9], [-0.75, 0.85], [-0.78, 0]];
+  return [[-0.75, 0.85], [-0.78, 0]];
+}
+/* 立刻放下手头的事，赶回工位 */
+function doGoWork() {
+  const ex = (FISH[game.act] || { exit: 0.2 }).exit, away0 = !seated, wasBed = lying, panic = { brow: 0.9, open: 0.5 };
+  game.slacking = false; game.act = 'work';
+  held.phone = false; phone.position.copy(PHONE_HOME); phone.rotation.set(0, 0, 0);
+  held.mug = false; mug.position.copy(MUG_HOME); mug.rotation.set(0, 0, 0); mugTiltT = 0;
+  held.book = false; book.visible = false; held.paper = false; if (!ball.flying) paper.visible = false;
+  arcPlaying = false; ringing = false; sleeping = false; lying = false; wake = false; if (screenMode === 3) screenMode = 0;
+  resetProps();
+  if (!away0) { steps = [{ dur: Math.max(0.15, ex), pose: S({ hX: -0.05 }), face: panic }]; rotT = HOME_ROT; manPosT.set(-0.62, 0); chairT = -0.6; }
+  else {
+    if (wasBed) { manPosT.set(BEDSIDE[0], BEDSIDE[1]); rotT = 0; }
+    steps = [...(ex ? [{ dur: ex, pose: U({ hX: -0.1 }), face: panic }] : []), walk(homePath(), { tX: 0.2 }, 2.4), ...sitDown({}, true)];
+  }
+  step = null; walking = false; status('💨 回工位');
+}
+function go(name) {
+  if (name === 'work') { pending = null; if (game.act !== 'work' || !seated || !idle()) wantHome = true; return; }
+  if (game.act === name) return;
+  if (working()) { game.act = name; startAct(name); }
+  else { pending = name; if (game.act !== 'work') wantHome = true; }
+}
+
+/* ---------- 命令：你说，他替你做 ---------- */
+const CMDS = [
+  { id: 'resign', cat: 'escape', label: '✉️ 辞职', kw: ['辞职', '不干', '离职', '裸辞', '跑路', '炒了'], relief: 40, log: () => `把辞职信拍在了${B()}脸上` },
+  { id: 'beach', cat: 'escape', label: '🏖️ 去海边', kw: ['海边', '大海', '沙滩', '看海', '度假', '旅游', '旅行', '请假', '休假', '放假'], relief: 35, log: '请假去了海边' },
+  { id: 'leave', cat: 'escape', label: '🕕 准点下班', kw: ['下班', '回家', '走人', '开溜', '溜了'], relief: 30, log: '到点就走，头也没回' },
+  { id: 'roast', cat: 'vent', label: '😤 怼老板', kw: ['怼', '骂', '吵', '老板', '领导', '上司', '甲方'], relief: 30, log: () => `当面怼了${B()}` },
+  { id: 'flip', cat: 'vent', label: '🪑 掀桌子', kw: ['掀', '桌子'], relief: 28, log: '把桌子掀了' },
+  { id: 'smash', cat: 'vent', label: '⌨️ 摔键盘', kw: ['摔', '砸', '键盘'], relief: 20, log: '把键盘摔了' },
+  { id: 'tear', cat: 'vent', label: '📄 撕周报', kw: ['撕', '周报', '日报', '报告', '文件'], relief: 15, log: '把周报撕成了碎片' },
+  { id: 'scream', cat: 'vent', label: '🗣️ 大喊', kw: ['大喊', '喊', '大叫', '吼', '尖叫'], relief: 18, log: '在办公室大喊了一声' },
+  { id: 'f_nap', cat: 'slack', label: '😴 趴桌睡', kw: ['趴', '眯', '打盹', '午睡'], relief: 10, log: '趴在桌上睡了一会儿' },
+  { id: 'f_bed', cat: 'slack', label: '🛋️ 躺沙发睡', kw: ['睡', '困', '沙发', '躺', '床'], relief: 15, log: '上班时间在沙发上睡了一觉' },
+  { id: 'f_scroll', cat: 'slack', label: '📱 刷手机', kw: ['手机', '刷', '抖音', '小红书', '微博', '朋友圈'], relief: 6, log: '光明正大地刷了手机' },
+  { id: 'f_video', cat: 'slack', label: '📺 看剧', kw: ['剧', '视频', '电影', 'b站', '综艺', '追番'], relief: 8, log: '在工位上看了剧' },
+  { id: 'f_arcade', cat: 'slack', label: '🕹️ 打游戏', kw: ['游戏', '街机', '开黑', '打一局'], relief: 12, log: '上班时间打了游戏' },
+  { id: 'spaceout', cat: 'slack', label: '🫥 发呆', kw: ['发呆', '摸鱼', '放空', '什么都不', '啥也不'], relief: 8, log: '理直气壮地发了会儿呆' },
+  { id: 'dance', cat: 'slack', label: '💃 跳舞', kw: ['跳舞', '蹦迪'], relief: 12, log: '在办公室跳了舞' },
+  { id: 'f_cooler', kw: ['茶水间', '接水', '喝水'], relief: 5, log: '去茶水间晃了一圈' },
+  { id: 'sip', kw: ['咖啡'], relief: 4, log: '慢悠悠喝了杯咖啡' },
+  { id: 'stretch', kw: ['懒腰', '拉伸', '活动'], relief: 5, log: '伸了个大懒腰' },
+  { id: 'spin', kw: ['转椅', '转圈'], relief: 8, log: '坐在椅子上转了好几圈' },
+  { id: 'toss', kw: ['纸团', '投篮'], relief: 6, log: '往垃圾桶投了纸团' },
+];
+const CAT_NAME = { vent: '😤 发泄', slack: '🛋️ 偷懒', escape: '🕊️ 逃离' };
+let curCat = 'vent', proxyText = '', autoRun = false;
+function logCmd(c, raw) {
+  const now = Date.now(), recent = save.last[c.id] && now - save.last[c.id] < 600000;
+  const r = Math.round(c.relief * (recent ? 0.4 : 1));
+  save.stress = Math.max(0, save.stress - r); save.last[c.id] = now;
+  const d = new Date(), text = c.id === 'proxy' ? `替你「${raw}」` : typeof c.log === 'function' ? c.log() : c.log;
+  save.diary.push({ t: `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`, x: text });
+  emote(c.cat === 'vent' ? '💢' : c.cat === 'escape' ? '✨' : '♪');
+  persist(); drawHud(); toast(`他替你${text.replace(/^替你/, '')}　压力 -${r}`);
+}
+function command(id, raw = '') {
+  audio();
+  if (id === 'work') { if (away || beachOn) callBack = true; else go('work'); return; }
+  const c = CMDS.find(x => x.id === id) || { id: 'proxy', relief: 8 };
+  if (c.id === 'proxy') proxyText = raw.slice(0, 14);
+  if (away || beachOn) callBack = true;
+  if (autoRun && !idle()) { autoRun = false; pending = c.id; wantHome = true; }
+  else if (FISH[c.id]) go(c.id);
+  else if (game.act !== 'work') { pending = c.id; wantHome = true; }
+  else if (idle()) startAct(c.id); else pending = c.id;
+  autoRun = false;
+  logCmd(c, raw);
+  if (!c.id.startsWith('cw_')) officeReact(c.id);
+}
+function submitCmd() {
+  const raw = el('cmdIn').value.trim(); if (!raw) return;
+  const low = raw.toLowerCase(); let best = null, bl = 0;
+  if (/上班|工作|干活|回来/.test(low) && !/不|别/.test(low)) { el('cmdIn').value = ''; command('work'); return; }
+  const ti = npcs.findIndex(n => raw.includes(NM(n)) || raw.includes(PERSONA[P(n)].n));
+  if (ti >= 0) { el('cmdIn').value = ''; cwTarget = ti; command('cw_' + (/白眼|嫌弃|呵|鄙视|瞪/.test(raw) ? 'roll' : /咖啡|奶茶|请|送|谢/.test(raw) ? 'coffee' : /鬼脸|吓|逗|捉弄|整/.test(raw) ? 'face' : 'chat')); return; }
+  for (const c of CMDS) for (const k of (c.kw || [])) if (k.length > bl && low.includes(k)) { best = c; bl = k.length; }
+  el('cmdIn').value = '';
+  command(best ? best.id : 'proxy', raw);
+}
+function drawCmds() {
+  el('cats').innerHTML = Object.keys(CAT_NAME).map(k => `<button data-cat="${k}" class="${k === curCat ? 'on' : ''}">${CAT_NAME[k]}</button>`).join('');
+  el('cmdBtns').innerHTML = CMDS.filter(c => c.cat === curCat).map(c => `<button data-id="${c.id}">${c.label}</button>`).join('');
+}
+el('cats').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { curCat = b.dataset.cat; drawCmds(); } });
+el('cmdBtns').addEventListener('click', e => { const b = e.target.closest('button'); if (b) command(b.dataset.id); });
+el('cmdGo').addEventListener('click', submitCmd);
+el('cmdWork').addEventListener('click', () => command('work'));
+drawCmds();
+
+function request(name) {
+  audio();
+  if (name.startsWith('cw:')) { openCwMenu(+name.slice(3)); return; }
+  if (name === 'lamp') { lampOn = !lampOn; sfx.click(); return; }
+  if (name === 'screen') { if (screenMode < 2) { screenMode = (screenMode + 1) % 2; sfx.click(); } return; }
+  if (name === 'plant') { plantW = 1; sfx.pop(); return; }
+  if (name === 'robot') { bot.spin = 1; botBub.say('♥', 1.2); sfx.beep(); return; }
+  if (name === 'cat') { catS.happy = 1; catBub.say('喵～♥', 1.4); tone(900, 0.25, 'sine', 0.07, 0, 400); return; }
+  if (name === 'fish') { fishDart = 1; sfx.pop(); return; }
+  const map = { arcade: 'f_arcade', sleep: 'f_bed', cooler: 'f_cooler', phone: 'f_scroll' };
+  if (map[name]) { command(map[name]); return; }
+  if (name === 'work' || CMDS.some(c => c.id === name)) { command(name); return; }
+  if (game.act !== 'work' || away || beachOn) return;
+  if (idle()) startAct(name); else pending = name;
+}
+
+function tickBehavior(dt, t) {
+  for (const k of KEYS) over[k] = 0;
+  if (wantHome) { wantHome = false; doGoWork(); }
+  if (!step && steps.length) {
+    step = steps.shift(); stepT = 0;
+    if (step.pose) Object.assign(tgt, step.pose);
+    step.start && step.start();
+  }
+  if (step) {
+    stepT += dt;
+    const r = step.update ? step.update(dt, stepT) : false;
+    if (step.dur !== undefined ? stepT >= step.dur : r) {
+      step = null;
+      if (!steps.length) {
+        Object.assign(tgt, SIT); status('⌨️ 老老实实上班中');
+        typeTimer = rand(6, 10);
+      }
+    }
+  } else {
+    // 坐在工位打字：和现实的你一样，老老实实上班
+    const sp = 0.45 + 0.55 * st.energy / 100, tired = 1 - st.energy / 100;
+    typed += dt * 13 * sp;
+    if (Math.floor(typed) !== lastKey) { lastKey = Math.floor(typed); if (Math.random() < 0.6) sfx.key(); }
+    const f = 17 * sp;
+    over.aS = Math.sin(t * f) * 0.03; over.aE = Math.sin(t * f * 1.35 + 1) * 0.08; over.aZ = Math.sin(t * 3.1) * 0.07; over.aW = Math.sin(t * f * 1.7) * 0.25;
+    over.bS = Math.sin(t * f * 1.1 + 2) * 0.03; over.bE = Math.sin(t * f * 1.25) * 0.08; over.bZ = Math.sin(t * 2.7 + 1) * 0.07; over.bW = Math.sin(t * f * 1.6 + 2) * 0.25;
+    over.tX = tired * 0.24 + Math.sin(t * 1.8) * 0.01; over.hX = tired * 0.14 + Math.sin(t * 1.3) * 0.03;
+    over.hY = Math.sin(t * 0.7) * 0.07; over.hZ = Math.sin(t * 0.5) * 0.04;
+    glanceTimer -= dt; if (glanceTimer <= 0) { glance = 0.7; glanceTimer = rand(3, 6); }
+    if (glance > 0) { glance -= dt; over.hX += 0.28; }
+    if (st.mood > 60) { over.rA = Math.min(0, Math.sin(t * 8)) * 0.35; over.hZ += Math.sin(t * 4) * 0.04; }
+    if (hoverMan) { over.hY = clamp(camYawLocal(), -1.2, 1.2); over.hX = -0.1; }
+    if (tapT > 0) { over[tapSide ? 'aE' : 'bE'] += 0.32 * tapT / 0.14; over.hX += 0.04; }
+    if (pending) { const p = pending; pending = null; if (FISH[p]) game.act = p; startAct(p); }
+    else {
+      typeTimer -= dt;
+      if (typeTimer <= 0) {
+        if (save.stress > 70 && Math.random() < 0.5) { emote('💦'); say(pickOne(['唉…', '好想下班', '又改需求', '（内心已经掀桌）', '撑住…']), 2); typeTimer = rand(7, 11); }
+        else { let a; do { a = pickOne(AUTO); } while (a === lastAct); startAct(a); autoRun = true; }
+      }
+    }
+  }
+  if (walking) {
+    const prev = Math.sin(walkPhase); walkPhase += dt * 9.5 * walkSpd / 1.3;
+    const s = Math.sin(walkPhase), c = Math.cos(walkPhase);
+    if (prev * s < 0) sfx.step();
+    over.lH = s * 0.6; over.rH = -s * 0.6;
+    over.lK = Math.max(0, -c) * 0.95; over.rK = Math.max(0, c) * 0.95;
+    over.lA = -s * 0.2; over.rA = s * 0.2;
+    if (!held.mug) { over.aS = -s * 0.5; over.aE = -Math.max(0, s) * 0.3; }
+    over.bS = s * 0.5; over.bE = -Math.max(0, -s) * 0.3;
+    over.tY = s * 0.12; over.hY = -s * 0.08; over.tZ = c * 0.03; over.hipX = s * 0.015;
+    over.hip = Math.cos(walkPhase * 2) * 0.02;
+  }
+}
+
+/* ---------- 扫地机器人 小圆 ---------- */
+const robot = reg(group(1.2, 0, 1.9, room), 'robot', '摸摸小圆');
+cyl(0.2, 0.21, 0.07, white, 0, 0.045, 0, robot);
+sph(0.15, new THREE.MeshPhysicalMaterial({ color: 0x8fdcff, transparent: true, opacity: 0.75, roughness: 0.1 }), 0, 0.08, 0, robot).scale.y = 0.5;
+add(new THREE.TorusGeometry(0.2, 0.009, 6, 28), hpGlow, 0, 0.082, 0, robot).rotation.x = Math.PI / 2;
+for (const s of [-1, 1]) sph(0.024, hpGlow, s * 0.06, 0.105, 0.125, robot);
+cyl(0.005, 0.005, 0.12, dark, 0, 0.2, -0.05, robot, 6); sph(0.02, hpGlow, 0, 0.27, -0.05, robot);
+const R1 = { x0: 0.6, x1: 1.8, z0: -1.3, z1: 2.2 }, R2 = { x0: -1.3, x1: 1.8, z0: 1.65, z1: 2.3 };
+const inR = (r, p) => p[0] >= r.x0 && p[0] <= r.x1 && p[1] >= r.z0 && p[1] <= r.z1;
+const bot = { path: [], wait: 1, spin: 0, clean: null };
+function botPick() {
+  let tg;
+  if (litter.length) { bot.clean = litter[0]; tg = [bot.clean.position.x, bot.clean.position.z]; }
+  else { bot.clean = null; const R = Math.random() < 0.6 ? R1 : R2; tg = [rand(R.x0, R.x1), rand(R.z0, R.z1)]; }
+  const p = [robot.position.x, robot.position.z];
+  bot.path = (inR(R1, p) && inR(R1, tg)) || (inR(R2, p) && inR(R2, tg)) ? [tg] : [[1.2, 1.95], tg];
+}
+function tickBot(dt) {
+  if (bot.spin > 0) { bot.spin -= dt; robot.rotation.y += dt * 13; return; }
+  if (Math.hypot(robot.position.x - man.position.x, robot.position.z - man.position.z) < 0.6) return;
+  if (!bot.path.length) {
+    bot.wait -= dt;
+    if (bot.wait <= 0 || (litter.length && !bot.clean)) { botPick(); bot.wait = rand(0.6, 2.2); }
+    return;
+  }
+  const p = bot.path[0], dx = p[0] - robot.position.x, dz = p[1] - robot.position.z, d = Math.hypot(dx, dz), sl = 0.6 * dt;
+  if (d <= sl + 0.02) {
+    bot.path.shift();
+    if (!bot.path.length && bot.clean) {
+      const i = litter.indexOf(bot.clean);
+      if (i >= 0) { room.remove(bot.clean); litter.splice(i, 1); botBub.say('✨', 1); sfx.beep(); }
+      bot.clean = null;
+    }
+  } else {
+    robot.position.x += dx / d * sl; robot.position.z += dz / d * sl;
+    let dr = Math.atan2(dx, dz) - robot.rotation.y; dr = Math.atan2(Math.sin(dr), Math.cos(dr)); robot.rotation.y += dr * Math.min(1, dt * 6);
+  }
+}
+
+/* ---------- 交互 ---------- */
+const ray = new THREE.Raycaster(), ptr = new THREE.Vector2(), tipEl = el('tip');
+function pick(e) {
+  ptr.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  ray.setFromCamera(ptr, camera);
+  const hit = ray.intersectObjects(interact.filter(o => o.visible), true)[0];
+  if (!hit) return null;
+  let o = hit.object; while (o && !o.userData.act) o = o.parent;
+  return o;
+}
+let down = null, downMan = false;
+canvas.addEventListener('pointerdown', e => {
+  down = [e.clientX, e.clientY]; downMan = pick(e) === man;
+  if (downMan) { controls.enabled = false; canvas.setPointerCapture(e.pointerId); }
+});
+canvas.addEventListener('pointerup', e => {
+  if (grab.on) { grabEnd(); down = null; downMan = false; return; }
+  const wasMan = downMan; if (downMan) controls.enabled = true; downMan = false;
+  if (!down) return;
+  const moved = Math.hypot(e.clientX - down[0], e.clientY - down[1]); down = null;
+  if (moved > 6) return;
+  const o = pick(e); if (o === man && wasMan) pat(); else if (o) request(o.userData.act);
+});
+canvas.addEventListener('pointermove', e => {
+  ptrN.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); ptrAge = 0;
+  if (grab.on) { grabMove(e); return; }
+  if (downMan && down && Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 8) {
+    if (grabStart()) grabMove(e); else { downMan = false; controls.enabled = true; }
+    tipEl.style.opacity = 0; return;
+  }
+  if (e.buttons) { tipEl.style.opacity = 0; return; }
+  const o = pick(e);
+  hoverMan = o === man;
+  canvas.style.cursor = o ? 'pointer' : 'grab';
+  if (o) { tipEl.textContent = o === man ? '点一下摸头 · 按住拖动可以把他拎起来' : o.userData.tip; tipEl.style.left = e.clientX + 'px'; tipEl.style.top = e.clientY + 'px'; tipEl.style.opacity = 1; }
+  else tipEl.style.opacity = 0;
+});
+canvas.addEventListener('pointerleave', () => { tipEl.style.opacity = 0; hoverMan = false; });
+document.querySelectorAll('#bar button').forEach(b => b.addEventListener('click', () => request(b.dataset.act)));
+const btnNight = el('btnNight'), btnSpin = el('btnSpin'), btnSound = el('btnSound');
+function setNight(v) {
+  night = v ? 1 : 0; lampOn = !!night; save.night = night; persist();
+  document.body.classList.toggle('night', !!night);
+  btnNight.textContent = night ? '☀️ 白天' : '🌙 夜晚';
+}
+btnNight.addEventListener('click', () => setNight(!night));
+btnSpin.addEventListener('click', () => { controls.autoRotate = !controls.autoRotate; btnSpin.classList.toggle('on', controls.autoRotate); });
+const drawSound = () => { btnSound.textContent = muted ? '🔇 静音' : '🔊 声音'; };
+btnSound.addEventListener('click', () => { muted = !muted; save.muted = muted; persist(); drawSound(); });
+drawSound(); if (save.night) setNight(1);
+
+/* ---------- 门与老板 ---------- */
+const door = group(1.75, 0, -2.62, room);
+box(0.08, 2.3, 0.08, metal, -0.5, 1.15, 0, door); box(0.08, 2.3, 0.08, metal, 0.5, 1.15, 0, door);
+box(1.08, 0.12, 0.1, metal, 0, 2.34, 0, door);
+const doorLightM = new THREE.MeshStandardMaterial({ color: 0x66ff99, emissive: 0x33ff88, emissiveIntensity: 1.5 });
+box(0.5, 0.05, 0.12, doorLightM, 0, 2.34, 0, door).castShadow = false;
+const doorPanel = box(0.92, 2.22, 0.03, new THREE.MeshPhysicalMaterial({ color: 0x8fdcff, transparent: true, opacity: 0.35, roughness: 0.1, depthWrite: false }), 0, 1.13, 0, door);
+doorPanel.castShadow = false;
+let doorK = 0;
+
+const bossG = group(0.2, 0, 2.5, room); bossG.visible = false;
+const bossP = { legs: [], arms: [] };
+{
+  const suit = mat(0x39415a, { roughness: 0.6 }), gray = mat(0xb9bec9), bskin = mat(0xf2c49c, { roughness: 0.6 }), bdark = mat(0x1d2433, { roughness: 0.3 });
+  for (const s of [1, -1]) { const g = group(0.12 * s, 0.9, 0, bossG); cap(0.09, 0.5, suit, 0, -0.4, 0, g); box(0.15, 0.08, 0.3, bdark, 0, -0.86, 0.06, g); bossP.legs.push(g); }
+  const body = group(0, 0.9, 0, bossG); bossP.body = body;
+  cap(0.24, 0.3, suit, 0, 0.42, 0, body).scale.set(1.1, 1, 0.95);
+  box(0.16, 0.2, 0.02, white, 0, 0.68, 0.215, body); box(0.06, 0.3, 0.025, mat(0xe03131), 0, 0.5, 0.235, body);
+  for (const s of [1, -1]) { const g = group(0.33 * s, 0.72, 0, body); cap(0.075, 0.38, suit, 0, -0.25, 0, g); sph(0.08, bskin, 0, -0.53, 0, g); bossP.arms.push(g); }
+  const h = group(0, 0.84, 0, body); h.scale.setScalar(1.3); bossP.head = h;
+  sph(0.2, bskin, 0, 0.2, 0, h);
+  for (const s of [-1, 1]) {
+    sph(0.085, gray, s * 0.165, 0.2, -0.04, h);
+    add(new THREE.TorusGeometry(0.052, 0.009, 6, 16), bdark, s * 0.078, 0.22, 0.185, h);
+    sph(0.016, bdark, s * 0.078, 0.22, 0.185, h);
+    box(0.08, 0.018, 0.012, gray, s * 0.078, 0.295, 0.19, h).rotation.z = s * 0.4;
+  }
+  box(0.13, 0.03, 0.03, gray, 0, 0.125, 0.2, h);
+  add(new THREE.TorusGeometry(0.03, 0.007, 6, 10, Math.PI), bdark, 0, 0.065, 0.195, h);
+}
+const bossBub = makeBubble(0.9);
+
+/* ---------- 状态与老板演员 ---------- */
+const FISH = {
+  f_scroll: { exit: 0.3 }, f_video: { exit: 0.55 }, f_nap: { exit: 1.2 }, f_cooler: { exit: 0 }, f_arcade: { exit: 0.6 }, f_bed: { exit: 1.8 },
+};
+const game = { on: false, act: 'work', slacking: false };
+const boss = { phase: 'idle', rot: Math.PI, ph: 0, moving: false, tgt: null, speed: 1.7, out: false, scaleT: 1, shake: 0 };
+let wantHome = false, toastT = 0, away = false, callBack = false, doorOpen = false, beachOn = false, sheetK = 0, bossKeyOn = false;
+const working = () => seated && idle() && game.act === 'work' && !wantHome;
+const slackOn = label => { status(label); game.slacking = true; };
+const lobbyEnd = t => { if (t > 10) wantHome = true; return false; };
+function toast(txt) { el('toast').textContent = txt; el('toast').style.opacity = 1; toastT = 3; }
+function flash() { const f = el('flash'); f.style.transition = 'none'; f.style.opacity = 1; requestAnimationFrame(() => requestAnimationFrame(() => { f.style.transition = 'opacity .7s'; f.style.opacity = 0; })); }
+function bossEnter() { bossG.visible = true; bossG.position.set(1.75, 0, -2.5); bossG.rotation.y = boss.rot = 0; bossG.scale.setScalar(1); Object.assign(boss, { tgt: [0.3, 0.95], speed: 1.7, out: false, scaleT: 1 }); sfx.click(); }
+function bossLeave(fast) { if (!bossG.visible) return; boss.tgt = [1.75, -2.5]; boss.speed = fast ? 3.8 : 1.5; boss.out = true; }
+const faceBoss = () => { rotT = Math.atan2(bossG.position.x - man.position.x, bossG.position.z - man.position.z); };
+
+/* 桌子成组，方便掀 */
+room.updateMatrixWorld(true); deskG.attach(monitor); deskG.attach(lamp);
+function resetDesk() {
+  deskG.position.set(-1.5, 0, 0); deskG.rotation.set(0, 0, 0); monitor.visible = lamp.visible = true;
+  kbd.position.copy(KBD_HOME); kbd.rotation.set(0, 0, 0);
+  if (!held.mug) { mug.position.copy(MUG_HOME); mug.rotation.set(0, 0, 0); }
+  if (!held.phone) { phone.position.copy(PHONE_HOME); phone.rotation.set(0, 0, 0); }
+}
+/* 周报 / 辞职信 */
+const sheet = group(0, 0, 0, room); sheet.rotation.order = 'YXZ'; sheet.visible = false;
+const sheetL = group(0, 0, 0, sheet), sheetR = group(0, 0, 0, sheet);
+{
+  const pm = mat(0xfffdf5, { roughness: 0.9 }), lm = mat(0x9aa4b8);
+  for (const [g, s] of [[sheetL, -1], [sheetR, 1]]) { box(0.12, 0.32, 0.005, pm, s * 0.06, 0, 0, g); for (let i = 0; i < 5; i++) box(0.085, 0.012, 0.006, lm, s * 0.06, 0.1 - i * 0.045, 0.002, g); }
+}
+/* 墨镜（海边用） */
+const shades = group(0, EYE_Y, FACE_Z + 0.01, head); shades.visible = false;
+box(0.34, 0.1, 0.03, mat(0x15181f, { roughness: 0.15 }), 0, 0, 0.012, shades);
+function paperBits(x, y, z) { burst('confetti', x, y, z); for (let i = 0; i < PN * 3; i++) pCol[i] = 1; pGeo.attributes.color.needsUpdate = true; }
+
+/* 海边 */
+const beachG = group(0, 0, 0, room); beachG.visible = false;
+const seaM = new THREE.MeshPhysicalMaterial({ color: 0x3fb8ff, transparent: true, opacity: 0.85, roughness: 0.15 });
+const sea = box(BX * 2 + 0.02, 0.12, 2.3, seaM, RX, 0.07, -1.56, beachG);
+const foam = box(BX * 2 + 0.02, 0.03, 0.14, mat(0xffffff), RX, 0.13, -0.42, beachG);
+{
+  box(BX * 2 + 0.02, 0.07, 5.42, mat(0xf3dfa6, { roughness: 1 }), RX, 0.035, 0, beachG).castShadow = false;
+  sph(0.5, new THREE.MeshStandardMaterial({ color: 0xfff1a8, emissive: 0xffc93c, emissiveIntensity: 1.8 }), -1.7, 3.6, -2.3, beachG).castShadow = false;
+  const trunk = cyl(0.09, 0.13, 2.3, mat(0xa8763e, { roughness: 0.9 }), 1.95, 1.12, -0.2, beachG); trunk.rotation.z = -0.14;
+  const lf = mat(0x3fbf5f, { roughness: 0.7 });
+  for (let i = 0; i < 7; i++) { const g = group(2.12, 2.28, -0.2, beachG); g.rotation.y = i / 7 * Math.PI * 2; const l = sph(0.2, lf, 0.55, -0.12, 0, g); l.scale.set(3, 0.25, 0.9); l.rotation.z = -0.35; }
+  for (const p of [[2.05, 2.15, -0.1], [2.2, 2.12, -0.3]]) sph(0.09, mat(0x6b4226), p[0], p[1], p[2], beachG);
+  const wd = mat(0xf2d7b0, { roughness: 0.6 });
+  box(2.25, 0.08, 0.74, wd, -0.15, 0.36, 0.7, beachG);
+  for (const lx of [-1.15, 0.85]) for (const lz of [0.42, 0.98]) box(0.07, 0.34, 0.07, wd, lx, 0.17, lz, beachG);
+  const pil = sph(0.26, mat(0xffffff, { roughness: 0.95 }), -0.92, 0.45, 0.7, beachG); pil.scale.set(0.9, 0.32, 1.1);
+  cyl(0.03, 0.03, 2.3, mat(0xb8c2d0, { metalness: 0.6, roughness: 0.3 }), -1.45, 1.15, 0.0, beachG);
+  const um = add(new THREE.ConeGeometry(1.25, 0.5, 10), mat(0xff6b6b, { roughness: 0.7, side: THREE.DoubleSide }), -1.45, 2.4, 0.0, beachG); um.rotation.z = 0.12;
+  cyl(0.3, 0.3, 0.04, wd, 0.6, 0.42, 1.75, beachG); cyl(0.03, 0.03, 0.42, wd, 0.6, 0.21, 1.75, beachG);
+  cyl(0.06, 0.045, 0.16, new THREE.MeshPhysicalMaterial({ color: 0xffb347, transparent: true, opacity: 0.8, roughness: 0.1 }), 0.6, 0.52, 1.75, beachG);
+  cyl(0.006, 0.006, 0.22, mat(0xff5d5d), 0.62, 0.6, 1.75, beachG, 6).rotation.z = -0.3;
+  const ballB = sph(0.2, mat(0xffffff, { roughness: 0.4 }), 1.3, 0.27, 1.5, beachG); sph(0.203, mat(0xff5d7a), 1.3, 0.27, 1.5, beachG).scale.set(1, 1, 0.35);
+}
+let officeHidden = [];
+function setBeach(on) {
+  if (on === beachOn) return; beachOn = on;
+  if (on) { officeHidden = room.children.filter(o => o.visible && o !== man && o !== beachG && o !== floor && !o.isSprite && !o.isLight && o.position.y >= 0); officeHidden.forEach(o => { o.visible = false; }); }
+  else { officeHidden.forEach(o => { o.visible = true; }); officeHidden = []; }
+  beachG.visible = on;
+}
+function resetProps() {
+  resetDesk(); held.kbd = false; held.sheet = false; sheet.visible = false; shades.visible = false;
+  if (beachOn) { setBeach(false); man.position.set(-0.78, 0, 0); manPosT.set(-0.78, 0); manY = 0; man.rotation.x = 0; }
+  man.visible = true; away = false; callBack = false; doorOpen = false; bossLeave(true);
+  if (screenMode === 2) screenMode = 0;
+}
+/* 离开一阵子再回来的通用步骤 */
+function awaySteps(label, sec, backMsg, onTick) {
+  return [
+    { start() { man.visible = false; away = true; doorOpen = false; status(label); this.s = sec; }, update(dt, t) { onTick && onTick.call(this, t); return callBack || t > this.s; } },
+    { dur: 0.3, pose: U(), start() { man.visible = true; away = false; callBack = false; man.position.set(1.75, 0, -2.6); manPosT.set(1.75, -2.6); doorOpen = true; toast(backMsg); status('🚶 又回来了'); } },
+    walk([[1.6, -1.2], [0.7, 0.9], [-0.75, 0.85], [-0.78, 0]], { hX: 0.25, tX: 0.12 }),
+    { dur: 0.1, start() { doorOpen = false; if (screenMode === 2) screenMode = 0; } },
+    ...sitDown(),
+  ];
+}
+
+/* ---------- 每帧：老板、门、道具、压力 ---------- */
+function tickGame(dt, t) {
+  boss.moving = false;
+  if (bossG.visible && boss.tgt) {
+    const dx = boss.tgt[0] - bossG.position.x, dz = boss.tgt[1] - bossG.position.z, d = Math.hypot(dx, dz), sl = boss.speed * dt;
+    boss.moving = true;
+    if (d <= sl) { bossG.position.x = boss.tgt[0]; bossG.position.z = boss.tgt[1]; boss.tgt = null; if (boss.out) bossG.visible = false; }
+    else { bossG.position.x += dx / d * sl; bossG.position.z += dz / d * sl; boss.rot = Math.atan2(dx, dz); boss.ph += dt * 6 * boss.speed; }
+  } else if (bossG.visible && man.visible) boss.rot = Math.atan2(man.position.x - bossG.position.x, man.position.z - bossG.position.z);
+  const sw = boss.moving ? Math.sin(boss.ph) * 0.5 : 0;
+  bossP.legs[0].rotation.x = sw; bossP.legs[1].rotation.x = -sw; bossP.arms[0].rotation.x = -sw * 0.8; bossP.arms[1].rotation.x = sw * 0.8;
+  bossP.body.position.y = 0.9 + (boss.moving ? Math.abs(Math.cos(boss.ph)) * 0.03 : 0);
+  boss.shake *= Math.exp(-dt * 1.2);
+  bossP.head.rotation.z = Math.sin(t * 28) * 0.12 * boss.shake; bossG.rotation.z = Math.sin(t * 31) * 0.04 * boss.shake;
+  let dr = boss.rot - bossG.rotation.y; dr = Math.atan2(Math.sin(dr), Math.cos(dr)); bossG.rotation.y += dr * Math.min(1, dt * 8);
+  const bs = bossG.scale.x + (boss.scaleT - bossG.scale.x) * Math.min(1, dt * 5); bossG.scale.setScalar(bs);
+  bossBub.tick(dt); bossBub.sp.position.set(bossG.position.x, 2.75 * bs + 0.1, bossG.position.z);
+  const open = doorOpen || (bossG.visible && bossG.position.z < -1.6);
+  doorK += ((open ? 1 : 0) - doorK) * Math.min(1, dt * 8);
+  doorPanel.scale.x = 1 - doorK * 0.94; doorPanel.position.x = doorK * 0.43;
+  // 手里的纸和键盘
+  if (held.sheet) {
+    sheet.visible = true;
+    if (held.sheet === 'boss') {
+      bossP.head.getWorldPosition(tmpV); room.worldToLocal(tmpV); const r = bossG.rotation.y;
+      sheet.position.set(tmpV.x + Math.sin(r) * 0.3 * bs, tmpV.y + 0.24 * bs, tmpV.z + Math.cos(r) * 0.3 * bs); sheet.rotation.set(0.1, r, 0.2);
+    } else {
+      room.worldToLocal(handA.getWorldPosition(tmpV));
+      if (held.sheet === true) { room.worldToLocal(handB.getWorldPosition(tmpV2)); tmpV.add(tmpV2).multiplyScalar(0.5); }
+      sheet.position.set(tmpV.x, tmpV.y + 0.12, tmpV.z); sheet.rotation.set(-0.45, man.rotation.y, 0);
+    }
+    sheetL.position.x = -sheetK * 0.13; sheetR.position.x = sheetK * 0.13; sheetL.rotation.z = sheetK * 0.5; sheetR.rotation.z = -sheetK * 0.5;
+  }
+  if (held.kbd) {
+    handA.getWorldPosition(tmpV); handB.getWorldPosition(tmpV2); tmpV.add(tmpV2).multiplyScalar(0.5); deskG.worldToLocal(tmpV);
+    kbd.position.copy(tmpV); kbd.rotation.set(0, 0, 0.7);
+  }
+  if (beachOn) { sea.position.y = 0.07 + Math.sin(t * 1.2) * 0.015; foam.position.z = -0.42 + Math.sin(t * 1.2) * 0.12; foam.material.opacity = 1; }
+  tickAlive(dt, t);
+  // 压力慢慢涨，脸色跟着变
+  save.stress = Math.min(100, save.stress + dt * 0.01);
+  st.energy = 100 - save.stress * 0.78; st.mood = 100 - save.stress * 0.85;
+  if (toastT > 0) { toastT -= dt; if (toastT <= 0) el('toast').style.opacity = 0; }
+}
+
+/* ---------- 活的感觉：眼神、表情符号、摸头、拎起来、跟着你敲键盘 ---------- */
+const pupils = eyes.map(e => e.children).flat(); pupils.forEach(m => { m.userData.b = m.position.clone(); });
+const gaze = new THREE.Vector2(), gazeT = new THREE.Vector2(), ptrN = new THREE.Vector2();
+const gv = new THREE.Vector3(), gq = new THREE.Quaternion();
+let ptrAge = 99, squash = 0, squashV = 0, patT = 0, patCd = 0, tapT = 0, tapSide = 0;
+const boing = (k = 1) => { squashV += 5 * k; };
+/* 头顶冒出来的小符号 */
+const emotes = [];
+function emote(sym) {
+  let e = emotes.find(x => x.t >= x.d);
+  if (!e) {
+    if (emotes.length >= 4) return;
+    const cv = document.createElement('canvas'); cv.width = cv.height = 128;
+    const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0, depthTest: false })); sp.renderOrder = 21; room.add(sp);
+    e = { cv, tex, sp, t: 9, d: 0 }; emotes.push(e);
+  }
+  const c = e.cv.getContext('2d'); c.clearRect(0, 0, 128, 128); c.font = '88px "Segoe UI Emoji", "Apple Color Emoji", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(sym, 64, 70);
+  e.tex.needsUpdate = true; e.t = 0; e.d = 1.4; e.ox = rand(0.25, 0.5) * (Math.random() < 0.5 ? -1 : 1);
+}
+function pat() {
+  if (away || grab.on || grab.fall) return;
+  boing(0.9); patT = 1.3; emote('❤'); sfx.pop(); tone(880, 0.12, 'sine', 0.06, 0.05, 300);
+  if (patCd <= 0) { save.stress = Math.max(0, save.stress - 2); patCd = 3; drawHud(); }
+  if (idle() && Math.random() < 0.7) say(pickOne(['嘿嘿', '再摸要收费了', '…谢谢', '被自己摸头，怪怪的', '继续，别停', '今天也辛苦了']), 1.5);
+}
+/* 拎起来、丢下去 */
+const DANGLE = U({ aS: -2.95, bS: -2.95, aZ: 0.3, bZ: -0.3, aE: -0.15, bE: -0.15, hX: 0.15, lH: -0.25, rH: -0.25, lK: 0.5, rK: 0.5 });
+const grab = { on: false, fall: false, x: 0, y: 0, z: 0, tx: 0, ty: 0, tz: 0, vy: 0, tilt: 0 };
+const grabPlane = new THREE.Plane(), gp = new THREE.Vector3(), gn = new THREE.Vector3();
+function grabStart() {
+  if (away || beachOn || grab.on || grab.fall) return false;
+  game.slacking = false; game.act = 'work'; pending = null; wantHome = false; autoRun = false;
+  held.phone = held.mug = held.book = held.paper = false; phone.position.copy(PHONE_HOME); phone.rotation.set(0, 0, 0);
+  mug.position.copy(MUG_HOME); mug.rotation.set(0, 0, 0); mugTiltT = 0; book.visible = false; if (!ball.flying) paper.visible = false;
+  arcPlaying = false; ringing = false; sleeping = false; lying = false; if (screenMode === 3) screenMode = 0;
+  resetProps();
+  steps = []; stepT = 0; walking = false; seated = false; chairT = -0.12;
+  step = { face: { open: 0.7, brow: 0.9 }, update: () => !grab.on && !grab.fall }; Object.assign(tgt, DANGLE);
+  Object.assign(grab, { on: true, x: man.position.x, y: man.position.y, z: man.position.z, tx: man.position.x, ty: 0.5, tz: man.position.z, tilt: 0 });
+  grabPlane.set(gn.set(0, 1, 0), -ROOM_Y); grab.ox = null;   // 在地面上拖，哪里都能放
+  status('🫳 被你拎起来了'); say(pickOne(['诶诶诶？！', '放我下来！', '我恐高！', '你要带我去哪']), 1.6); emote('💦'); sfx.whoosh();
+  return true;
+}
+function grabMove(e) {
+  ptr.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); ray.setFromCamera(ptr, camera);
+  if (!ray.ray.intersectPlane(grabPlane, gp)) return;
+  room.worldToLocal(gp);
+  if (grab.ox === null) { grab.ox = man.position.x - gp.x; grab.oz = man.position.z - gp.z; }
+  grab.tx = clamp(gp.x + grab.ox, -2.4, 7.8); grab.tz = clamp(gp.z + grab.oz, -2.4, 2.4); grab.ty = 0.95;
+}
+function grabEnd() { grab.on = false; grab.fall = true; grab.vy = 0; controls.enabled = true; }
+function land() {
+  boing(1.7); shakeT = 0.25; sfx.miss(); tone(90, 0.15, 'sine', 0.15); emote('💫'); Object.assign(tgt, STAND);
+  const zones = [['f_bed', -1.5, -1.9, 1.15], ['f_arcade', -1.9, 2.0, 0.95], ['f_cooler', 1.9, 0.6, 0.85], ['leave', 1.75, -2.0, 0.8]];
+  const z = zones.find(z => Math.hypot(grab.x - z[1], grab.z - z[2]) < z[3]);
+  if (z) command(z[0]);
+  else { say(pickOne(['哎哟！', '轻点放啊', '我自己会走！']), 1.4); status('🚶 自己走回工位'); steps = [{ dur: 0.7, pose: U({ hip: 0.7, lK: 0.8, rK: 0.8, lH: -0.4, rH: -0.4, tX: 0.3 }) }, walk(homePath(), {}, 1.5), ...sitDown()]; }
+}
+function tickAlive(dt, t) {
+  // 眼睛跟着鼠标
+  ptrAge += dt;
+  if (ptrAge < 5 && man.visible) {
+    headRef.getWorldPosition(gv); gv.project(camera);
+    const dx = clamp((ptrN.x - gv.x) / 0.5, -1, 1), dy = clamp((ptrN.y - gv.y) / 0.5, -1, 1);
+    gv.setFromMatrixColumn(camera.matrixWorld, 0).multiplyScalar(dx).add(gn.setFromMatrixColumn(camera.matrixWorld, 1).multiplyScalar(dy));
+    head.getWorldQuaternion(gq); gv.applyQuaternion(gq.invert()); gazeT.set(clamp(gv.x, -1, 1), clamp(gv.y, -1, 1));
+  } else gazeT.set(0, 0);
+  gaze.lerp(gazeT, Math.min(1, dt * 8));
+  for (const m of pupils) { m.position.x = m.userData.b.x + gaze.x * 0.017; m.position.y = m.userData.b.y + gaze.y * 0.013; }
+  // 弹性
+  squashV += (-squash * 190 - squashV * 13) * dt; squash += squashV * dt;
+  man.scale.set(1 + squash * 0.3, Math.max(0.5, 1 - squash * 0.35), 1 + squash * 0.3);
+  tuft.rotation.z = -0.5 + Math.sin(t * 2.6) * 0.07 + clamp(vel.hX * 0.06 + squash * 1.5, -0.6, 0.6);
+  if (patT > 0) patT -= dt; if (patCd > 0) patCd -= dt; if (tapT > 0) tapT -= dt;
+  // 表情符号
+  headRef.getWorldPosition(gv); room.worldToLocal(gv);
+  for (const e of emotes) {
+    if (e.t >= e.d) { e.sp.material.opacity = 0; continue; }
+    e.t += dt; const u = e.t / e.d;
+    e.sp.position.set(gv.x + e.ox, gv.y + AV.bubble * 0.5 + u * 0.45, gv.z); e.sp.material.opacity = Math.min(1, u * 8, (1 - u) * 3);
+    e.sp.scale.setScalar(0.42 * (0.6 + Math.min(1, u * 5) * 0.4));
+  }
+  // 被拎着 / 下落
+  if (grab.on) {
+    const k = Math.min(1, dt * 14), px = grab.x;
+    grab.x += (grab.tx - grab.x) * k; grab.y += (grab.ty - grab.y) * k; grab.z += (grab.tz - grab.z) * k;
+    grab.tilt += (clamp((grab.x - px) / Math.max(dt, 0.001) * -0.12, -0.7, 0.7) - grab.tilt) * Math.min(1, dt * 6);
+    man.position.set(grab.x, grab.y, grab.z); manPosT.set(grab.x, grab.z); man.rotation.z = grab.tilt; rotT = faceCamRot();
+    legL.hp.rotation.x += Math.sin(t * 9) * 0.45; legR.hp.rotation.x -= Math.sin(t * 9) * 0.45;
+  } else if (grab.fall) {
+    grab.vy -= 15 * dt; grab.y += grab.vy * dt; man.rotation.z *= 0.85;
+    if (grab.y <= 0) { grab.y = 0; grab.fall = false; man.rotation.z = 0; man.position.set(grab.x, 0, grab.z); manPosT.set(grab.x, grab.z); land(); }
+    else { man.position.set(grab.x, grab.y, grab.z); manPosT.set(grab.x, grab.z); }
+  }
+  if (!autoRun && (!idle() || game.act !== 'work') && !grab.on) save.slackSec += dt;
+}
+
+/* ---------- 日记 ---------- */
+function drawDiary() {
+  const d = new Date(), n = save.diary.length;
+  el('diaryHead').textContent = `${d.getMonth() + 1} 月 ${d.getDate()} 日 · ${save.name || '你'}的替身今天替你做了 ${n} 件事`;
+  el('diaryList').innerHTML = n ? save.diary.slice().reverse().map(e => `<div class="dl"><b>${e.t}</b><span>${e.x.replace(/[<>&]/g, '')}</span></div>`).join('') : '<div class="dl"><span>还是空的。在下面告诉他你想做什么。</span></div>';
+  el('diaryFoot').textContent = n ? '而现实的你：一件都没做，还在上班。' : '';
+}
+el('btnDiary').addEventListener('click', () => { drawDiary(); el('diary').classList.add('open'); });
+el('diaryClose').addEventListener('click', () => el('diary').classList.remove('open'));
+el('diary').addEventListener('pointerdown', e => { if (e.target === el('diary')) el('diary').classList.remove('open'); });
+
+/* ---------- 老板键（现实里用） ---------- */
+{
+  const cols = 'ABCDEFGHIJKL'.split(''), hd = ['项目', '负责人', '状态', '计划工时', '实际工时', '完成度%', '预算(万)', '已用(万)'];
+  const rows = [['用户增长二期', '张伟', '进行中', 120, 134, 92, 48.5, 41.2], ['数据看板重构', '王芳', '已完成', 80, 76, 100, 22.0, 19.8], ['支付链路优化', '李强', '进行中', 160, 171, 78, 65.0, 52.3],
+    ['会员体系升级', '刘洋', '已延期', 90, 118, 64, 30.0, 33.6], ['客服工单系统', '陈静', '进行中', 70, 58, 85, 18.0, 12.4], ['移动端性能', '杨帆', '已完成', 60, 63, 100, 15.5, 15.1],
+    ['供应商对接', '赵磊', '进行中', 110, 96, 71, 40.0, 28.7], ['年会筹备', '周敏', '未开始', 40, 0, 0, 12.0, 0], ['安全合规审计', '吴昊', '进行中', 100, 88, 87, 35.0, 26.9]];
+  const pad = n => '<td></td>'.repeat(n);
+  let h = '<tr><th></th>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr>';
+  h += `<tr><th>1</th><td colspan="8" style="font-size:15px;font-weight:700">2026 年 Q4 项目进度周报</td>${pad(4)}</tr>`;
+  h += '<tr><th>2</th>' + hd.map(x => `<td class="hd">${x}</td>`).join('') + pad(4) + '</tr>';
+  rows.forEach((r, i) => { h += `<tr><th>${i + 3}</th>` + r.map((v, j) => `<td class="${j >= 3 ? 'num' : ''}">${v}</td>`).join('') + pad(4) + '</tr>'; });
+  for (let r = 12; r <= 40; r++) h += `<tr><th>${r}</th>${pad(12)}</tr>`;
+  el('bkTable').innerHTML = h;
+}
+function setBossKey(on) {
+  bossKeyOn = on; el('bk').style.display = on ? 'flex' : 'none';
+  document.title = on ? 'Q4周报_终版_v3（最终）.xlsx - Excel' : `${save.name || '我'}的替身`;
+  if (master) master.gain.value = on ? 0 : 0.5;
+}
+el('btnKey').addEventListener('click', () => setBossKey(true));
+addEventListener('keydown', e => {
+  if (e.key === 'Escape') { e.preventDefault(); if (el('prof').classList.contains('open') && save.setup) { el('prof').classList.remove('open'); return; } setBossKey(!bossKeyOn); return; }
+  if (bossKeyOn) return;
+  if (!e.repeat) { tapT = 0.14; tapSide ^= 1; if (idle() && seated) sfx.key(); }
+  if (e.key === 'Enter' && e.target.id === 'cmdIn') submitCmd();
+});
+
+/* ---------- 身份设定：让他像你 ---------- */
+const HAIRC = [0x3a2a20, 0x17171c, 0x8a6d40, 0xd9a441, 0xb5452f, 0x9aa4b8];
+const SKINC = [0xffd2a8, 0xffe2cc, 0xe9b98a, 0xc08a5c];
+const SHIRTC = [[0x23252b], [0xf4f6fb], [0x7fb2ff], [0xffa63d], [0x7fdcb5], [0xff9ec0]];
+const OUTFITS = [['suit', '西装'], ['tee', 'T恤短裤'], ['hoodie', '卫衣'], ['coat', '白大褂']];
+const HAIRS = [['short', '短发'], ['long', '长发'], ['pony', '马尾'], ['bald', '光头']];
+const AV = { mouthUp: 0.12, mouthFwd: 0.3, earSide: 0.3, earUp: 0.2, bubble: 0.95 };
+const _aq = new THREE.Quaternion(), _av = new THREE.Vector3();
+function headPt(out, side, up, fwd) { headRef.getWorldPosition(out); man.getWorldQuaternion(_aq); return out.add(_av.set(side, up, fwd).applyQuaternion(_aq)); }
+function applyLook() {
+  if (!OUTFIT_DEF[save.outfit]) save.outfit = 'suit';
+  if (!HAIRS.some(h => h[0] === save.hair)) save.hair = 'short';
+  dressRig(me, { outfit: save.outfit, hair: save.hair, hairHex: HAIRC[save.hairCol] ?? HAIRC[0], skinHex: SKINC[save.skin] ?? SKINC[0], shirtHex: save.shirt >= 0 ? SHIRTC[save.shirt][0] : null });
+  for (const id in decorG) decorG[id].visible = true;
+  el('h1').textContent = `${save.name || '我'}的替身`;
+}
+function drawProf() {
+  const hx = n => '#' + n.toString(16).padStart(6, '0');
+  const chips = (list, key) => list.map(([v, l]) => `<button data-k="${key}" data-v="${v}" class="${save[key] === v ? 'on' : ''}">${l}</button>`).join('');
+  el('oOutfit').innerHTML = chips(OUTFITS, 'outfit'); el('oHair').innerHTML = chips(HAIRS, 'hair');
+  const dots = (list, key, def) => (def ? `<button data-k="${key}" data-v="-1" class="dot def ${save[key] < 0 ? 'on' : ''}">原</button>` : '') +
+    list.map((c, i) => `<button data-k="${key}" data-v="${i}" class="dot ${save[key] === i ? 'on' : ''}" style="background:${hx(Array.isArray(c) ? c[0] : c)}"></button>`).join('');
+  el('oHairC').innerHTML = dots(HAIRC, 'hairCol'); el('oSkin').innerHTML = dots(SKINC, 'skin'); el('oShirt').innerHTML = dots(SHIRTC, 'shirt', true);
+}
+function openProf() {
+  el('pName').value = save.name; el('pJob').value = save.job; el('pBoss').value = save.boss; el('pOff').value = save.offAt; el('pPay').value = save.pay || '';
+  el('profTitle').textContent = save.setup ? '👤 我的样子' : '👤 先告诉我你是谁';
+  el('profClose').style.display = save.setup ? '' : 'none';
+  drawProf(); el('prof').classList.add('open');
+}
+function closeProf() {
+  save.name = el('pName').value.trim() || '我'; save.job = el('pJob').value.trim() || '打工人'; save.boss = el('pBoss').value.trim() || '老板'; save.offAt = el('pOff').value || '18:00'; save.pay = Math.max(0, +el('pPay').value || 0);
+  const first = !save.setup; save.setup = true; persist(); applyLook(); drawHud(); el('prof').classList.remove('open');
+  if (first) { say(`我就是${save.name}`, 2); toast('在下面告诉他：你现在最想做什么？'); }
+}
+el('prof').addEventListener('click', e => {
+  const b = e.target.closest('button[data-k]'); if (!b) return;
+  const k = b.dataset.k; save[k] = b.classList.contains('dot') ? +b.dataset.v : b.dataset.v; persist(); applyLook(); drawProf();
+});
+for (const id of ['pName', 'pJob', 'pBoss']) el(id).addEventListener('input', () => { save.name = el('pName').value.trim(); applyLook(); });
+el('profOk').addEventListener('click', closeProf); el('profClose').addEventListener('click', closeProf);
+el('btnProf').addEventListener('click', openProf);
+el('profReset').addEventListener('click', () => { if (confirm('确定清空身份、日记和所有记录吗？')) { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} persist = () => {}; location.reload(); } });
+applyLook(); if (!save.setup) openProf();
+
+/* ---------- 同事们 ---------- */
+const PERSONA = {
+  grind: { n: '卷王', idle: ['再改一版', '今晚通宵吧', '这个需求我来', '卷不动也得卷', '周报写了吗？'] },
+  buddy: { n: '摸鱼搭子', idle: ['几点了…', '好想下班', '周末去哪玩', '摸会儿鱼', '外卖到了没'] },
+  gossip: { n: '八卦王', idle: ['听说了吗？', '我跟你说个事…', '真的假的！', '你猜怎么着', '别告诉别人啊'] },
+  suck: { n: '马屁精', idle: ['领导辛苦了', '这个方案太棒了', '老板英明', '我马上改！'] },
+  newbie: { n: '实习生', idle: ['这个怎么弄…', '我是不是做错了', '不敢问…', '好紧张', '前辈好！'] },
+  chill: { n: '佛系', idle: ['随缘', '差不多得了', '能用就行', '不急', '慢慢来'] },
+};
+const CW_DEF = [
+  { name: '小王', persona: 'grind', outfit: 'suit', hair: 'short', hairCol: 1, skin: 0, shirt: 0x2b3a55 },
+  { name: '阿杰', persona: 'buddy', outfit: 'hoodie', hair: 'short', hairCol: 2, skin: 2, shirt: 0x7fdcb5 },
+  { name: '莉莉', persona: 'gossip', outfit: 'tee', hair: 'long', hairCol: 4, skin: 1, shirt: 0xff9ec0 },
+  { name: '老张', persona: 'suck', outfit: 'suit', hair: 'bald', hairCol: 5, skin: 2, shirt: 0x5a4a7a },
+  { name: '小美', persona: 'newbie', outfit: 'tee', hair: 'pony', hairCol: 3, skin: 0, shirt: 0x7fb2ff },
+  { name: '大刘', persona: 'chill', outfit: 'coat', hair: 'short', hairCol: 0, skin: 3, shirt: 0xeef0f2 },
+];
+if (!Array.isArray(save.cw) || save.cw.length !== CW_DEF.length) save.cw = CW_DEF.map(o => ({ ...o }));
+const CW_SLOTS = [[3.7, -1.55], [5.3, -1.55], [6.9, -1.55], [3.7, 0.95], [5.3, 0.95], [6.9, 0.95]];
+const AZ = -0.15;   // 两排工位中间的过道
+const npcs = [];
+const NPC_SIT = S(), NPC_STAND = U();
+const CLAP = { aS: -1.25, aE: -1.0, aY: -0.55, bS: -1.25, bE: -1.0, bY: 0.55 };
+const CHEER = { aS: -2.8, aZ: 0.8, aE: -0.4, bS: -2.8, bZ: -0.8, bE: -0.4 };
+const FILM = { aS: -1.75, aE: -0.55, aY: -0.35, hX: -0.05 };
+const MOUTH_COVER = { aS: -1.45, aE: -2.3, aY: -0.65, bS: -1.45, bE: -2.3, bY: 0.65, hX: -0.08 };
+const LOUNGE = { tX: -0.28, hX: -0.18, aS: -2.75, aE: -2.4, aZ: 0.6, bS: -2.75, bE: -2.4, bZ: -0.6 };
+const SIPN = { aS: -1.25, aE: -1.75, aY: -0.75, hX: -0.2 };
+const PHONEN = { aS: -1.15, aE: -1.75, aY: -0.45, hX: 0.38 };
+const STRETCH = { aS: -3.0, bS: -3.0, aZ: 0.75, bZ: -0.75, aE: -0.1, bE: -0.1, tX: -0.22, hX: -0.4 };
+const gapX = x => x + 0.8;
+const isBack = p => p[0] > 2.6 && p[1] < -1.0;
+/* 两点之间的走法：先上过道，再进目标 */
+function route(a, b) {
+  const pts = [];
+  if (isBack(a)) { const gx = gapX(a[0]); pts.push([gx, a[1]], [gx, AZ]); }
+  else if (a[0] > 2.6) pts.push([a[0], AZ]);
+  else pts.push([1.6, AZ]);
+  if (isBack(b)) { const gx = gapX(b[0]); pts.push([gx, AZ], [gx, b[1]]); }
+  else if (b[0] > 2.6) pts.push([b[0], AZ]);
+  else pts.push([1.6, AZ]);
+  pts.push(b);
+  return pts;
+}
+function labelTex(text) {
+  const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64; const c = cv.getContext('2d');
+  c.font = '600 30px "Microsoft YaHei", sans-serif'; const w = Math.min(244, c.measureText(text).width + 34);
+  c.fillStyle = 'rgba(255,255,255,.82)'; c.beginPath(); c.roundRect((256 - w) / 2, 10, w, 44, 22); c.fill();
+  c.fillStyle = '#1d2a44'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(text, 128, 33, 220);
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+function cwLook(o) { return { outfit: o.outfit, hair: o.hair, hairHex: HAIRC[o.hairCol] ?? HAIRC[0], skinHex: SKINC[o.skin] ?? SKINC[0], shirtHex: o.shirt }; }
+function makeNPC(i) {
+  const [x, z] = CW_SLOTS[i], back = z < 0;
+  const deskM = mat(0xf2d7b0, { roughness: 0.5 }), legM = mat(0xb8c2d0, { metalness: 0.7, roughness: 0.3 });
+  const desk = group(x, 0, z + 0.45, room);
+  box(0.9, 0.05, 0.5, deskM, 0, DESK - 0.025, 0, desk);
+  for (const sx of [-0.4, 0.4]) for (const sz of [-0.2, 0.2]) box(0.045, DESK - 0.05, 0.045, legM, sx, (DESK - 0.05) / 2, sz, desk);
+  const lapM = mat(0xc9d0db, { roughness: 0.35, metalness: 0.3 });
+  box(0.32, 0.015, 0.22, lapM, 0, DESK + 0.008, -0.04, desk);
+  const scr = group(0, DESK + 0.015, 0.07, desk); scr.rotation.x = 0.28;
+  box(0.32, 0.21, 0.012, lapM, 0, 0.105, 0, scr);
+  const glowM = new THREE.MeshBasicMaterial({ color: 0x9fd0ff }); const gp = add(new THREE.PlaneGeometry(0.28, 0.17), glowM, 0, 0.105, -0.007, scr); gp.rotation.y = Math.PI;
+  const cup = cyl(0.04, 0.034, 0.09, mat(pickOne([0xff7a59, 0x7fb2ff, 0x7fdcb5, 0xffd36b]), { roughness: 0.35 }), 0.32, DESK + 0.045, -0.05, desk); cup.visible = false;
+  if (i % 3 === 0) for (let k = 0; k < 4; k++) box(0.22, 0.02, 0.3, mat(0xfdfdf8), -0.3, DESK + 0.01 + k * 0.022, 0.02, desk).rotation.y = Math.sin(k * 3) * 0.2;
+  const chairG = group(x, 0, z - 0.05, room), cm = mat(0x3a4666, { roughness: 0.6 });
+  box(0.46, 0.07, 0.46, cm, 0, 0.385, 0, chairG); box(0.44, 0.5, 0.07, cm, 0, 0.7, -0.23, chairG);
+  cyl(0.03, 0.03, 0.3, legM, 0, 0.2, 0, chairG); cyl(0.24, 0.26, 0.04, legM, 0, 0.03, 0, chairG);
+  const root = reg(group(x, 0, z, room), 'cw:' + i, ''); root.rotation.order = 'YXZ';
+  const rig = makeRig(root);
+  const phoneP = box(0.06, 0.11, 0.012, mat(0x23283a, { roughness: 0.25 }), 0, -0.07, 0.05, rig.armA.hand); phoneP.visible = false;
+  const mugP = cyl(0.04, 0.034, 0.09, mat(0xffffff, { roughness: 0.4 }), 0, -0.06, 0.06, rig.armA.hand); mugP.visible = false;
+  const label = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthTest: false, opacity: 0.9 })); label.scale.set(1.0, 0.25, 1); label.position.y = 1.62; label.renderOrder = 15; root.add(label);
+  const n = { i, root, rig, desk, chairG, cup, phoneP, mugP, label, glowM, bub: makeBubble(0.75),
+    seat: [x, z], stand: [x, z - 0.15], approach: back ? [x, z + 1.0] : [x, z - 0.72], back,
+    cur: { ...NPC_SIT }, tgt: { ...NPC_SIT }, vel: { ...ZERO }, over: { ...ZERO },
+    q: [], step: null, st: 0, seated: true, walking: false, wph: rand(0, 6), pos: new THREE.Vector2(x, z), posT: new THREE.Vector2(x, z),
+    rot: 0, rotT: 0, chairX: 0, timer: rand(3, 9), fC: { open: 0, brow: 0, closed: 0 }, face: {}, blink: rand(1, 4), away: false, ph: rand(0, 10) };
+  npcs.push(n); dressNPC(n); return n;
+}
+function dressNPC(n) {
+  const o = save.cw[n.i]; dressRig(n.rig, cwLook(o));
+  n.label.material.map && n.label.material.map.dispose(); n.label.material.map = labelTex(o.name); n.label.material.needsUpdate = true;
+  n.root.userData.tip = `${o.name}（${PERSONA[o.persona].n}）· 点我互动`;
+}
+const P = n => save.cw[n.i].persona, NM = n => save.cw[n.i].name;
+/* ---- 动作小积木 ---- */
+const nSay = (n, txt, d = 2.2) => n.bub.say(txt, d);
+const nWait = d => ({ dur: d });
+const nStandUp = n => n.seated ? [{ dur: 0.25, pose: S({ tX: 0.38 }) }, { dur: 0.55, pose: U(), start(n) { n.seated = false; n.chairX = -0.45; n.posT.set(...n.stand); } }] : [];
+const nSitDown = n => [{ dur: 0.3, pose: U(), start(n) { n.rotT = 0; } }, { dur: 0.7, pose: S({ tX: 0.25 }), start(n) { n.posT.set(...n.seat); n.chairX = 0; } }, { dur: 0.15, pose: S(), start(n) { n.seated = true; } }];
+const nGo = (pts, speed = 1.25) => ({ pts, speed, pose: U({ aE: -0.4, bE: -0.4, tX: 0.06 }) });
+function nGoHome(n) {
+  if (n.seated) return [];
+  const here = [n.pos.x, n.pos.y], d = Math.hypot(here[0] - n.stand[0], here[1] - n.stand[1]);
+  return [...(d > 0.15 ? [nGo(route(here, n.stand))] : []), ...nSitDown(n)];
+}
+const nPoseHere = (n, sitPose, standPose) => n.seated ? S(sitPose) : U(standPose ?? sitPose);
+function nInterrupt(n) {
+  n.q = []; n.step = null; n.walking = false; n.phoneP.visible = n.mugP.visible = false;
+  if (n.away) { n.away = false; n.root.visible = true; n.pos.set(1.75, -2.5); n.posT.copy(n.pos); }
+}
+function nLookMe(n) {
+  const a = Math.atan2(man.position.x - n.pos.x, man.position.z - n.pos.y) - n.root.rotation.y;
+  const d = Math.atan2(Math.sin(a), Math.cos(a));
+  n.over.hY += clamp(d, -1.15, 1.15); if (n.seated) n.over.tY += clamp(d * 0.3, -0.4, 0.4);
+}
+function nFaceMe(n) { n.rotT = Math.atan2(man.position.x - n.pos.x, man.position.z - n.pos.y); }
+/* ---- 平时自己找事做 ---- */
+function npcIdle(n) {
+  const p = P(n), lines = PERSONA[p].idle, r = Math.random();
+  const mutter = () => n.q.push({ dur: 2.4, pose: S(), start(n) { nSay(n, pickOne(lines), 2.2); } });
+  const sip = () => n.q.push({ dur: 0.5, pose: S({ aS: -1.0, aE: -0.6 }) }, { dur: 1.8, pose: S(SIPN), face: { closed: 1 }, start(n) { n.mugP.visible = true; } }, { dur: 0.4, pose: S(), start(n) { n.mugP.visible = false; } });
+  const stretch = () => n.q.push({ dur: 1.8, pose: S(STRETCH), face: { closed: 1, open: 0.7 } }, { dur: 0.3, pose: S() });
+  const lookAround = () => n.q.push({ dur: 2.6, pose: S(), update(n, dt, t) { n.over.hY += Math.sin(t * 2.2) * 0.8; } });
+  if (p === 'grind') { r < 0.5 ? mutter() : r < 0.8 ? sip() : lookAround(); n.timer = rand(9, 15); return; }
+  if (p === 'buddy') {
+    if (r < 0.3) n.q.push({ dur: 7, pose: S(NAP), face: { closed: 1 }, start(n) { nSay(n, '💤', 1.5); } }, { dur: 0.4, pose: S() });
+    else if (r < 0.55) n.q.push({ dur: 6, pose: S(PHONEN), face: { closed: 0.3 }, start(n) { n.phoneP.visible = true; } }, { dur: 0.3, pose: S(), start(n) { n.phoneP.visible = false; } });
+    else if (r < 0.75) n.q.push(...nStandUp(n), nGo(route(n.stand, [2.75, 0.62])), { dur: 4, pose: U({ bS: -1.0, bE: -0.9 }), start(n) { n.rotT = -Math.PI / 2; nSay(n, '续一杯', 1.6); } }, ...nGoHomeLater(n));
+    else mutter();
+    n.timer = rand(8, 14); return;
+  }
+  if (p === 'gossip' && r < 0.45) {
+    const others = npcs.filter(o => o !== n && o.seated && !o.step && !o.q.length); if (others.length) {
+      const o = pickOne(others), spot = o.back ? [o.seat[0] + 0.55, o.seat[1] + 0.35] : [o.seat[0] + 0.55, o.seat[1] - 0.1];
+      n.q.push(...nStandUp(n), nGo(route(n.stand, spot)), { dur: 4.2, pose: U({ aS: -0.6, aE: -1.2, aY: -0.3 }), talk: true,
+        start(n) { n.rotT = Math.atan2(o.pos.x - n.pos.x, o.pos.y - n.pos.y); nSay(n, pickOne(['听说了吗…', '我跟你说个大八卦', '你知道吗，那谁…']), 2); this.r = 0; },
+        update(n, dt, t) { if (!this.r && t > 2.1) { this.r = 1; if (!o.step) o.q.push({ dur: 2, pose: S(), look: true, start(o) { nSay(o, pickOne(['真的假的！', '不会吧？！', '哇哦', '嘘…']), 1.8); } }); } } },
+        ...nGoHomeLater(n));
+      n.timer = rand(12, 20); return;
+    }
+  }
+  if (p === 'chill' && r < 0.45) { n.q.push({ dur: 7, pose: S(LOUNGE), face: { closed: 0.6 } }, { dur: 0.4, pose: S() }); n.timer = rand(8, 14); return; }
+  if (p === 'newbie' && r < 0.4) { lookAround(); n.timer = rand(6, 11); return; }
+  if (p === 'suck' && bossG.visible && r < 0.8) { n.q.push({ dur: 3, pose: S(), start(n) { nSay(n, `${B()}说得对！`, 2); }, update(n, dt, t) { n.over.hX += Math.abs(Math.sin(t * 6)) * 0.3; } }); n.timer = rand(6, 10); return; }
+  r < 0.35 ? mutter() : r < 0.6 ? sip() : r < 0.75 ? stretch() : lookAround();
+  n.timer = rand(8, 15);
+}
+function nGoHomeLater(n) { return [{ dur: 0.05, start(n) { n.q.unshift(...nGoHome(n)); } }]; }
+/* ---- 对替身的反应 ---- */
+let gossipCd = 0;
+function officeReact(id) {
+  if (beachOn) return;
+  const me2 = save.name || '他';
+  for (const n of npcs) {
+    const p = P(n), d = rand(0.15, 0.9);
+    const react = steps => { nInterrupt(n); n.q = [nWait(d), ...steps, ...nGoHomeLater(n)]; };
+    if (id === 'roast') {
+      const base = { dur: 1.8, pose: nPoseHere(n, { tX: -0.12 }), look: true, face: { open: 0.7, brow: 1 }, start(n) { emoteNPC(n, '❗'); } };
+      if (p === 'gossip') react([base, ...nStandUp(n), { dur: 6, pose: U(FILM), look: true, face: { brow: 0.6 }, start(n) { nFaceMe(n); n.phoneP.visible = true; nSay(n, "录下来了📱", 2.2); }, update(n) { n.over.hY *= 0.6; } }, { dur: 0.3, pose: U(), start(n) { n.phoneP.visible = false; } }]);
+      else if (p === 'buddy') react([base, ...nStandUp(n), { dur: 5, pose: U(CLAP), look: true, face: { open: 0.6, closed: 1 }, start(n) { nFaceMe(n); nSay(n, "干得漂亮！👏", 2.4); }, update(n, dt, t) { clapAnim(n, t); } }]);
+      else if (p === 'suck') react([base, { dur: 3, pose: nPoseHere(n, {}), look: true, face: { brow: -0.6 }, start(n) { nSay(n, `${B()}别生气…`, 2.4); } }]);
+      else if (p === 'grind') react([base, { dur: 2, pose: S(), start(n) { nSay(n, '……（继续卷）', 2); } }]);
+      else if (p === 'newbie') react([base, { dur: 4, pose: nPoseHere(n, MOUTH_COVER), look: true, face: { open: 0.4, brow: 1 }, start(n) { nSay(n, '哇…好勇', 2.2); } }]);
+      else react([base, { dur: 2.5, pose: nPoseHere(n, {}), look: true, start(n) { nSay(n, '牛', 1.6); } }]);
+    } else if (['flip', 'smash', 'scream', 'tear'].includes(id)) {
+      const say = { grind: '能不能小点声', gossip: '我就知道他迟早要疯', newbie: '吓、吓死我了', chill: '年轻真好', suck: '冷静冷静', buddy: '哈哈哈哈' }[p];
+      react([{ dur: 1.4, pose: nPoseHere(n, { aS: -1.2, bS: -1.2, aE: -0.5, bE: -0.5, tX: -0.15 }), look: true, face: { open: 0.9, brow: 1 }, start(n) { emoteNPC(n, '😱'); },
+        update(n, dt, t) { if (t < 0.35) n.over.hip += Math.sin(t / 0.35 * Math.PI) * 0.09; } },
+        { dur: 2.2, pose: nPoseHere(n, {}), look: true, start(n) { if (Math.random() < 0.7) nSay(n, say, 2); } }]);
+    } else if (id === 'leave') {
+      if (p === 'buddy') react([{ dur: 0.6, pose: nPoseHere(n, {}), look: true, start(n) { nSay(n, '等等我！一起走！', 2); } }, ...nStandUp(n),
+        nGo(route(n.stand, [1.75, -2.45]), 1.6), { start(n) { n.away = true; n.root.visible = false; }, update(n, dt, t) { return !away && t > 3 || t > 16; } },
+        { dur: 0.1, start(n) { n.away = false; n.root.visible = true; n.pos.set(1.75, -2.5); n.posT.copy(n.pos); } }, nGo(route([1.75, -2.45], n.stand))]);
+      else if (p === 'grind') react([{ dur: 2.5, pose: S(), look: true, face: { brow: 1, open: 0.5 }, start(n) { nSay(n, '这么早？？', 2); } }]);
+      else react([{ dur: 2.2, pose: nPoseHere(n, {}), look: true, start(n) { if (p === 'chill') nSay(n, '羡慕', 1.6); } }]);
+    } else if (id === 'resign') {
+      const say = { grind: '那你的活谁干…', buddy: '带我一起走！', gossip: '我就知道！', newbie: '前辈保重😭', chill: '恭喜毕业' }[p];
+      if (p === 'suck') react([nWait(5), { dur: 5, pose: S(), start(n) { nSay(n, '（假装没看见）', 2.4); } }]);
+      else react([nWait(5.2), ...nStandUp(n), { dur: 5.5, pose: U(CLAP), look: true, face: { open: 0.6, closed: 1 }, start(n) { nFaceMe(n); nSay(n, say, 2.6); }, update(n, dt, t) { clapAnim(n, t); } }]);
+    } else if (id === 'dance') {
+      if (p === 'buddy') react([nWait(2.5), ...nStandUp(n), { dur: 7, pose: U(), look: true, face: { open: 0.4, closed: 1 }, start(n) { nSay(n, '一起嗨！🎵', 2); }, update(n, dt, t) { danceAnim(n, t); } }]);
+      else if (p === 'grind') react([nWait(2), { dur: 3, pose: S(), look: true, start(n) { nSay(n, '……', 1.5); } }]);
+      else react([nWait(2.5), { dur: 5, pose: nPoseHere(n, CLAP), look: true, face: { open: 0.5 }, update(n, dt, t) { clapAnim(n, t); } }]);
+    } else if (['f_nap', 'f_bed', 'f_scroll', 'f_video', 'f_arcade', 'spaceout', 'f_cooler'].includes(id)) {
+      if (p === 'grind' && n.seated) {
+        if (Math.random() < 0.35 && gossipCd <= 0) {
+          gossipCd = 40;
+          react([nWait(2), { dur: 1.6, pose: S(), look: true, face: { brow: -0.8 }, start(n) { nSay(n, '又摸鱼…', 1.5); } }, ...nStandUp(n),
+            nGo(route(n.stand, [1.75, -2.45]), 1.5), { dur: 0.4, start(n) { n.away = true; n.root.visible = false; toast(`${NM(n)} 去找${B()}告状了！`); } },
+            { dur: 2.5 }, { dur: 0.1, start(n) { n.away = false; n.root.visible = true; n.pos.set(1.75, -2.5); n.posT.copy(n.pos); bossCheck(); } },
+            nGo(route([1.75, -2.45], n.stand))]);
+        } else react([nWait(1.5), { dur: 2, pose: S(), look: true, face: { brow: -0.8 }, start(n) { nSay(n, pickOne(['又摸鱼…', '啧', `${me2}又在偷懒`]), 1.8); } }]);
+      } else if (p === 'buddy' && n.seated) {
+        if (id === 'f_cooler') react([nWait(1.2), ...nStandUp(n), nGo(route(n.stand, [2.75, 0.62])), { dur: 7, pose: U({ bS: -1.0, bE: -0.9 }), start(n) { n.rotT = -Math.PI / 2; nSay(n, '一起一起～', 2); } }]);
+        else if (id === 'f_arcade') react([nWait(1.2), ...nStandUp(n), nGo(route(n.stand, [-1.35, 1.5])), { dur: 7, pose: U(CHEER), face: { open: 0.6 }, start(n) { n.rotT = -Math.PI / 2 - 0.4; nSay(n, '带我一个！', 2); }, update(n, dt, t) { n.over.hip += Math.abs(Math.sin(t * 8)) * 0.03; } }]);
+        else if (id === 'f_scroll' || id === 'f_video') react([nWait(1.5), { dur: 7, pose: S(PHONEN), face: { closed: 0.3 }, start(n) { n.phoneP.visible = true; nSay(n, '我也刷会儿', 1.6); } }, { dur: 0.3, pose: S(), start(n) { n.phoneP.visible = false; } }]);
+        else react([nWait(1.5), { dur: 8, pose: S(NAP), face: { closed: 1 }, start(n) { nSay(n, '我也眯会儿', 1.6); } }, { dur: 0.4, pose: S() }]);
+      } else if (p === 'gossip' && n.seated && Math.random() < 0.6) react([nWait(2.5), { dur: 2.2, pose: S(), look: true, start(n) { nSay(n, `${me2}又开始了`, 2); } }]);
+    }
+  }
+}
+function emoteNPC(n, sym) { n.bub.say(sym, 1.1); }
+function clapAnim(n, t) { const s = Math.sin(t * 20); n.over.aY += s * 0.28; n.over.bY -= s * 0.28; }
+function danceAnim(n, t) {
+  const w = t * Math.PI * 5, s = Math.sin(w), k = 0.22 + 0.22 * Math.abs(s);
+  n.over.lH = n.over.rH = -k; n.over.lK = n.over.rK = 2 * k; n.over.lA = n.over.rA = -k;
+  n.over.hipX = s * 0.05; n.over.tZ = s * 0.1; n.over.hZ = -s * 0.14;
+  n.over.aS = -2.2 - s * 0.5; n.over.aE = -0.8 + s * 0.4; n.over.bS = -2.2 + s * 0.5; n.over.bE = -0.8 - s * 0.4; n.over.aZ = 0.6; n.over.bZ = -0.6;
+}
+let bossCheckT = 0;
+function bossCheck() {
+  if (bossG.visible) return;
+  bossEnter(); bossCheckT = 5.5;
+  setTimeout(() => bossBub.say(pickOne(['嗯？谁在摸鱼？', '都在忙吧？', '我就随便看看']), 2.2), 1500);
+  for (const n of npcs) if (P(n) === 'suck' && n.seated && !n.step) n.q.push({ dur: 3, pose: S(), look: true, start(n) { nSay(n, `${B()}好！`, 1.8); }, update(n, dt, t) { n.over.hX += Math.abs(Math.sin(t * 6)) * 0.3; } });
+}
+/* ---- 替身走过去找同事 ---- */
+let cwTarget = 0;
+function cwTargeted(n, act) {
+  nInterrupt(n); const p = P(n);
+  const turn = { dur: 0.6, pose: nPoseHere(n, {}), start(n) { nFaceMe(n); } };
+  const lines = {
+    roll: { grind: '有意见？', buddy: '你翻我干嘛😂', gossip: '我记住了哦', suck: '嘿嘿…', newbie: '我、我做错什么了', chill: '……随你' },
+    coffee: { grind: '谢了，正好要熬夜', buddy: '兄弟够意思！', gossip: '这是有事求我吧？', suck: '哎呀太客气了', newbie: '谢谢前辈！😭', chill: '谢啦' },
+    face: { grind: '幼稚', buddy: '哈哈哈哈哈', gossip: '😂 拍下来了', suck: '……', newbie: '噗', chill: '哈' },
+    chat: { grind: '没空，在卷', buddy: '走，摸鱼去', gossip: '我跟你说个大八卦…', suck: '小点声，老板在', newbie: '前辈好！', chill: '随便啦' },
+  }[act][p];
+  const face = act === 'roll' ? { brow: -0.8 } : act === 'coffee' ? { closed: 1, open: 0.4 } : act === 'face' ? { open: 0.8, closed: 1 } : { open: 0.3 };
+  n.q = [turn, { dur: act === 'chat' ? 1.8 : 0.8, pose: nPoseHere(n, {}) },
+    { dur: 3, pose: nPoseHere(n, act === 'coffee' ? SIPN : act === 'face' && p !== 'grind' ? MOUTH_COVER : {}), face, talk: act === 'chat',
+      start(n) { nSay(n, lines, 2.6); if (act === 'coffee') { n.mugP.visible = true; emoteNPC(n, '❤'); } } },
+    { dur: 0.4, pose: nPoseHere(n, {}), start(n) { n.mugP.visible = false; if (act === 'coffee') n.cup.visible = true; n.rotT = 0; } }];
+}
+function cwScript(act) {
+  const n = npcs[cwTarget], ap = n.approach, apRot = n.back ? Math.PI : 0;
+  const carry = act === 'coffee' ? CARRY : {};
+  const front = act === 'roll' ? { dur: 2.6, pose: U({ aS: 0.25, aZ: 0.5, aE: -1.9, aY: 0.4, bS: 0.25, bZ: -0.5, bE: -1.9, bY: -0.4, hZ: 0.22, hX: -0.22 }), face: { brow: -0.9, closed: 0.5 }, start() { say('呵。', 1.6); } }
+    : act === 'coffee' ? { dur: 1.2, pose: U({ aS: -1.45, aE: -0.2 }), face: { smile: 1 }, start() { say('请你喝！', 1.4); } }
+    : act === 'face' ? { dur: 2.6, pose: U({ aS: -2.6, aE: -2.5, aZ: 0.95, bS: -2.6, bE: -2.5, bZ: -0.95 }), face: { open: 1, closed: 1 }, start() { say('略略略～', 2); }, update(dt, t) { over.hZ = Math.sin(t * 10) * 0.3; over.hip = Math.abs(Math.sin(t * 8)) * 0.03; } }
+    : { dur: 3.6, pose: U({ aS: -0.6, aE: -1.3, aY: -0.4 }), talk: true, face: { smile: 1 }, start() { say(pickOne(['今天也太累了吧', '中午吃什么？', '你也在摸鱼吗', '周末有安排吗']), 1.8); } };
+  return [
+    ...(act === 'coffee' ? [{ dur: 0.5, pose: REACH_A }, { dur: 0.4, pose: S(CARRY), start() { held.mug = true; } }] : []),
+    ...standUp(`🚶 去找${NM(n)}`, carry),
+    walk([...OUT, ...route([0.7, 0.9], ap)], carry, 1.4),
+    { dur: 0.45, pose: U(carry), start() { rotT = apRot; cwTargeted(n, act); } },
+    front,
+    ...(act === 'coffee' ? [{ dur: 0.3, pose: U(), start() { held.mug = false; mug.visible = false; } }] : []),
+    { dur: act === 'chat' ? 1.8 : 0.9, pose: U(), face: act === 'chat' ? { smile: 1 } : {} },
+    walk([...route(ap, [0.7, 0.9]).slice(0, -1), [0.7, 0.9], [-0.75, 0.85], [-0.78, 0]], {}, 1.4),
+    { dur: 0.05, start() { mug.visible = true; mug.position.copy(MUG_HOME); mug.rotation.set(0, 0, 0); } },
+    ...sitDown(),
+  ];
+}
+/* ---- 每帧 ---- */
+function tickNPC(n, dt, t) {
+  const o = n.over; for (const k of KEYS) o[k] = 0;
+  if (!n.step && n.q.length) {
+    n.step = n.q.shift(); n.st = 0; n.face = n.step.face || {};
+    if (n.step.pose) Object.assign(n.tgt, n.step.pose);
+    if (n.step.pts) { n.step.k = 0; n.walking = true; }
+    n.step.start && n.step.start.call(n.step, n);
+  }
+  if (n.step) {
+    const s = n.step; n.st += dt; let done;
+    if (s.pts) {
+      const p = s.pts[s.k], dx = p[0] - n.pos.x, dz = p[1] - n.pos.y, d = Math.hypot(dx, dz), sl = s.speed * dt;
+      if (d <= sl) { n.pos.set(p[0], p[1]); s.k++; } else { n.pos.x += dx / d * sl; n.pos.y += dz / d * sl; n.rotT = Math.atan2(dx, dz); }
+      n.posT.copy(n.pos); done = s.k >= s.pts.length; if (done) n.walking = false;
+    } else { const r = s.update ? s.update.call(s, n, dt, n.st) : false; done = s.dur !== undefined ? n.st >= s.dur : r; }
+    if (s.look) nLookMe(n);
+    if (s.talk) n.fC.open = 0.25 + 0.35 * Math.abs(Math.sin(t * 12));
+    if (done) { n.step = null; if (!n.q.length) { Object.assign(n.tgt, n.seated ? NPC_SIT : NPC_STAND); n.face = {}; if (!n.seated) n.q.push(...nGoHome(n)); } }
+  } else if (n.seated && !beachOn) {
+    const sp = P(n) === 'grind' ? 1.7 : P(n) === 'newbie' ? 0.6 : 1, f = 17 * sp, tt = t + n.ph;
+    o.aS = Math.sin(tt * f) * 0.03; o.aE = Math.sin(tt * f * 1.35 + 1) * 0.08; o.aW = Math.sin(tt * f * 1.7) * 0.25;
+    o.bS = Math.sin(tt * f * 1.1 + 2) * 0.03; o.bE = Math.sin(tt * f * 1.25) * 0.08; o.bW = Math.sin(tt * f * 1.6 + 2) * 0.25;
+    o.tX = 0.12 + Math.sin(tt * 1.8) * 0.01; o.hX = 0.18 + Math.sin(tt * 1.3) * 0.03; o.hY = Math.sin(tt * 0.7) * 0.08;
+    n.timer -= dt; if (n.timer <= 0) npcIdle(n);
+  }
+  if (n.walking) {
+    n.wph += dt * 9.5; const s = Math.sin(n.wph), c = Math.cos(n.wph);
+    o.lH = s * 0.6; o.rH = -s * 0.6; o.lK = Math.max(0, -c) * 0.95; o.rK = Math.max(0, c) * 0.95;
+    o.aS = -s * 0.5; o.bS = s * 0.5; o.tY = s * 0.12; o.hip = Math.cos(n.wph * 2) * 0.02;
+  }
+  for (const k of KEYS) { n.vel[k] += ((n.tgt[k] - n.cur[k]) * 130 - n.vel[k] * 17) * dt; n.cur[k] += n.vel[k] * dt; }
+  applyRigPose(n.rig, k => n.cur[k] + o[k]);
+  const k8 = 1 - Math.exp(-dt * 8);
+  if (!n.walking) n.pos.lerp(n.posT, k8);
+  n.root.position.set(n.pos.x, 0, n.pos.y);
+  let dr = n.rotT - n.root.rotation.y; dr = Math.atan2(Math.sin(dr), Math.cos(dr)); n.root.rotation.y += dr * (1 - Math.exp(-dt * 9));
+  n.chairG.position.x += (n.seat[0] + n.chairX - n.chairG.position.x) * (1 - Math.exp(-dt * 6));
+  n.chairG.rotation.y = n.seated ? n.root.rotation.y : n.chairG.rotation.y * Math.exp(-dt * 4);
+  // 表情
+  const f = n.face, kf = 1 - Math.exp(-dt * 12), fc = n.fC;
+  fc.open += ((n.step && n.step.talk ? fc.open : f.open ?? 0) - fc.open) * kf; fc.brow += ((f.brow ?? 0) - fc.brow) * kf; fc.closed += ((f.closed ?? 0) - fc.closed) * kf;
+  n.blink -= dt; if (n.blink < 0) n.blink = rand(2, 5);
+  const ey = (n.blink < 0.12 ? 0.1 : 1) * (1 - 0.88 * fc.closed);
+  n.rig.eyes.forEach(e => { e.scale.y = ey; });
+  n.rig.brows.forEach(b => { b.position.y = b.userData.y0 + fc.brow * 0.022; b.rotation.z = b.userData.s * (fc.brow * -0.3 - 0.06); });
+  n.rig.openMesh.visible = fc.open >= 0.25; n.rig.openMesh.scale.set(0.7 + fc.open * 0.3, 0.35 + fc.open * 0.8, 0.35);
+  n.glowM.color.setHex(night ? 0xcfe6ff : 0x9fd0ff);
+  // 气泡和名牌
+  n.bub.tick(dt); n.rig.head.getWorldPosition(tmpV); room.worldToLocal(tmpV);
+  n.bub.sp.position.set(tmpV.x, tmpV.y + 0.85, tmpV.z);
+  n.label.material.opacity = n.bub.sp.material.opacity > 0.05 ? 0 : 0.9;
+  n.label.position.y = n.seated ? 1.42 : 1.62;
+}
+function tickOffice(dt, t) {
+  if (gossipCd > 0) gossipCd -= dt;
+  if (bossCheckT > 0) { bossCheckT -= dt; if (bossCheckT <= 0) bossLeave(false); }
+  for (const n of npcs) tickNPC(n, dt, t);
+}
+for (let i = 0; i < CW_SLOTS.length; i++) makeNPC(i);
+
+/* ---- 点同事弹出的菜单 ---- */
+let lastPtr = [innerWidth / 2, innerHeight / 2], menuNpc = null;
+canvas.addEventListener('pointerdown', e => { lastPtr = [e.clientX, e.clientY]; }, true);
+function openCwMenu(i) {
+  const n = npcs[i]; menuNpc = n;
+  el('cwmTitle').textContent = `${NM(n)} · ${PERSONA[P(n)].n}`;
+  const m = el('cwMenu'); m.style.display = 'block';
+  const x = Math.min(lastPtr[0] + 10, innerWidth - m.offsetWidth - 8), y = Math.min(lastPtr[1] + 10, innerHeight - m.offsetHeight - 8);
+  m.style.left = x + 'px'; m.style.top = y + 'px';
+}
+el('cwMenu').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || !menuNpc) return;
+  el('cwMenu').style.display = 'none';
+  if (b.dataset.a === 'edit') { openCwPanel(); return; }
+  cwTarget = menuNpc.i; command('cw_' + b.dataset.a);
+});
+addEventListener('pointerdown', e => { if (!e.target.closest('#cwMenu')) el('cwMenu').style.display = 'none'; });
+
+/* ---- 同事设定面板 ---- */
+function openCwPanel() {
+  const hx = n => '#' + n.toString(16).padStart(6, '0');
+  const opt = (list, v) => list.map(([k, l]) => `<option value="${k}" ${k === v ? 'selected' : ''}>${l}</option>`).join('');
+  el('cwList').innerHTML = save.cw.map((o, i) => `<div class="cwrow" data-i="${i}">
+    <input data-f="name" maxlength="6" value="${o.name.replace(/"/g, '')}">
+    <select data-f="persona">${opt(Object.entries(PERSONA).map(([k, v]) => [k, v.n]), o.persona)}</select>
+    <select data-f="outfit">${opt(OUTFITS, o.outfit)}</select>
+    <select data-f="hair">${opt(HAIRS, o.hair)}</select>
+    <input data-f="shirt" type="color" value="${hx(o.shirt ?? OUTFIT_DEF[o.outfit])}">
+    <button data-f="rand" title="随机发色和肤色">🎲</button></div>`).join('');
+  el('cwPanel').classList.add('open');
+}
+el('cwList').addEventListener('input', cwEdit); el('cwList').addEventListener('change', cwEdit);
+el('cwList').addEventListener('click', e => { if (e.target.dataset.f === 'rand') cwEdit(e); });
+function cwEdit(e) {
+  const row = e.target.closest('.cwrow'); if (!row) return;
+  const i = +row.dataset.i, o = save.cw[i], f = e.target.dataset.f;
+  if (f === 'name') o.name = e.target.value.trim() || CW_DEF[i].name;
+  else if (f === 'shirt') o.shirt = parseInt(e.target.value.slice(1), 16);
+  else if (f === 'rand') { o.hairCol = Math.floor(rand(0, HAIRC.length)); o.skin = Math.floor(rand(0, SKINC.length)); }
+  else if (f) o[f] = e.target.value;
+  dressNPC(npcs[i]); persist();
+}
+el('btnCw').addEventListener('click', openCwPanel);
+el('cwClose').addEventListener('click', () => el('cwPanel').classList.remove('open'));
+el('cwPanel').addEventListener('pointerdown', e => { if (e.target === el('cwPanel')) el('cwPanel').classList.remove('open'); });
+
+/* ---- 镜头跟随我的替身 ---- */
+let follow = false;
+const camOff = new THREE.Vector3(), folT = new THREE.Vector3();
+el('btnCam').addEventListener('click', () => {
+  follow = !follow; el('btnCam').classList.toggle('on', follow);
+  if (follow) { man.getWorldPosition(folT); folT.y += 0.8; camOff.copy(camera.position).sub(controls.target).setLength(5.5); camera.position.copy(folT).add(camOff); controls.target.copy(folT); }
+  else { controls.target.set(0, -0.9, 0); camera.position.copy(CAM_HOME); }
+});
+function tickFollow(dt) {
+  if (!follow) return;
+  man.getWorldPosition(folT); folT.y += man.visible ? 0.8 : 0.4;
+  const k = 1 - Math.exp(-dt * 4);
+  camOff.subVectors(folT, controls.target).multiplyScalar(k);
+  controls.target.add(camOff); camera.position.add(camOff);
+}
+
+CMDS.push(
+  { id: 'cw_roll', relief: 12, log: () => `对${NM(npcs[cwTarget])}翻了个大白眼` },
+  { id: 'cw_coffee', relief: 6, log: () => `给${NM(npcs[cwTarget])}送了杯咖啡` },
+  { id: 'cw_face', relief: 8, log: () => `冲${NM(npcs[cwTarget])}做了个鬼脸` },
+  { id: 'cw_chat', relief: 5, log: () => `上班时间跑去找${NM(npcs[cwTarget])}聊天` });
+Object.assign(scripts, { cw_roll: () => cwScript('roll'), cw_coffee: () => cwScript('coffee'), cw_face: () => cwScript('face'), cw_chat: () => cwScript('chat') });
+
+function tickDecor(dt, t) {
+  lightMats.forEach((m, i) => { m.emissiveIntensity = (0.8 + 0.7 * Math.sin(t * 2 + i * 1.6)) * lerp(1, 2.2, nightK); });
+  fishDart *= Math.exp(-dt * 1.5); fishPhase += dt * (0.8 + 5 * fishDart);
+  fishes.forEach((f, i) => { const a = fishPhase * (i ? -0.8 : 1) + i * 2; f.position.set(Math.cos(a) * 0.13, 0.69 + i * 0.07 + Math.sin(t * 1.3 + i) * 0.03, Math.sin(a) * 0.12); f.rotation.y = (i ? Math.PI : 0) - a; });
+  arcClock += dt; if (arcClock > 0.12) { arcClock = 0; drawArcade(t); }
+  if (!cat.visible) return;
+  catS.happy *= Math.exp(-dt * 2);
+  if (catS.u < 1) {
+    catS.u = Math.min(1, catS.u + dt / 0.9);
+    cat.position.lerpVectors(catS.from, catSpot(catS.spot, tmpV), catS.u); cat.position.y += 4 * 0.7 * catS.u * (1 - catS.u);
+  } else {
+    catSpot(catS.spot, cat.position); cat.position.y += Math.abs(Math.sin(t * 10)) * 0.1 * catS.happy;
+    catS.wait -= dt;
+    if (catS.wait <= 0 && !lying) { catS.from.copy(cat.position); catS.spot = (catS.spot + 1 + Math.floor(rand(0, 2))) % 3; catS.u = 0; catS.wait = rand(18, 35); }
+  }
+  let dr = CAT_ROT[catS.spot] - cat.rotation.y; dr = Math.atan2(Math.sin(dr), Math.cos(dr)); cat.rotation.y += dr * Math.min(1, dt * 5);
+  catTail.rotation.set(-0.7, 0, Math.sin(t * (3 + 8 * catS.happy)) * 0.45);
+  catHead.rotation.z = Math.sin(t * 0.9) * 0.1;
+  const sleepy = Math.sin(t * 0.25 + 1) > 0.55 && catS.happy < 0.1;
+  catEyes.forEach(e => { e.scale.y = sleepy ? 0.15 : 1; });
+}
+
+/* ---------- 主循环 ---------- */
+const clock = new THREE.Clock(), tmpV = new THREE.Vector3(), tmpV2 = new THREE.Vector3();
+const dayCol = new THREE.Color(0xfff4e0), nightCol = new THREE.Color(0x8fa8ff);
+const fC = { smile: 0.6, open: 0, brow: 0, closed: 0 };
+let blinkT = rand(2, 4), hudClock = 0, earK = 0;
+function frame() {
+  if (bossKeyOn) { clock.getDelta(); requestAnimationFrame(frame); return; }
+  if (frozen && !simDt) { clock.getDelta(); controls.update(); renderer.render(scene, camera); requestAnimationFrame(frame); return; }
+  const dt = simDt || Math.min(clock.getDelta(), 0.05), t = simDt ? (simT += simDt) : clock.elapsedTime + simT;
+  const k8 = 1 - Math.exp(-dt * 8);
+
+  tickBehavior(dt, t);
+  for (const k of KEYS) { vel[k] += ((tgt[k] - cur[k]) * 130 - vel[k] * 17) * dt; cur[k] += vel[k] * dt; }
+  applyPose();
+  chest.scale.y = 1 + Math.sin(t * 1.8) * 0.015;
+
+  if (!walking) { man.position.x += (manPosT.x - man.position.x) * k8; man.position.z += (manPosT.y - man.position.z) * k8; }
+  let dr = rotT - man.rotation.y; dr = Math.atan2(Math.sin(dr), Math.cos(dr));
+  man.rotation.y += dr * (1 - Math.exp(-dt * 9));
+  const k5 = 1 - Math.exp(-dt * 5);
+  man.rotation.x += ((lying ? -Math.PI / 2 : 0) - man.rotation.x) * k5;
+  manY += ((lying ? BED.lieY : 0) - manY) * k5;
+  man.position.y = manY + Math.sin(clamp(manY / BED.lieY, 0, 1) * Math.PI) * 0.22;
+  blanketK += ((sleeping ? 1 : 0) - blanketK) * (1 - Math.exp(-dt * 4));
+  blanket.scale.set(lerp(0.2, 1, blanketK), lerp(0.55, 1, blanketK), 1);
+  chair.position.x += (chairT - chair.position.x) * (1 - Math.exp(-dt * 6));
+  if (seated) chair.rotation.y = man.rotation.y + Math.PI / 2; else chair.rotation.y *= Math.exp(-dt * 4);
+
+  // 表情
+  const f = (step && step.face) || {};
+  const idleNow = idle();
+  let tSmile = f.smile ?? (st.mood > 55 ? 0.85 : st.mood > 30 ? 0.45 : 0.6);
+  let tOpen = f.open ?? 0, tBrow = f.brow ?? (st.energy < 25 ? -0.5 : 0), tClosed = f.closed ?? 0;
+  if (step && step.talk) tOpen = 0.25 + 0.4 * Math.abs(Math.sin(t * 13));
+  if (idleNow && hoverMan) { tSmile = 1; tBrow = 0.6; } if (patT > 0) { tSmile = 1; tClosed = 1; tOpen = 0; }
+  const kf = 1 - Math.exp(-dt * 12);
+  fC.smile += (tSmile - fC.smile) * kf; fC.open += (tOpen - fC.open) * kf; fC.brow += (tBrow - fC.brow) * kf; fC.closed += (tClosed - fC.closed) * kf;
+  const sad = st.mood <= 30 && f.smile === undefined && !(idleNow && hoverMan);
+  smileMesh.visible = false; smileMesh.rotation.z = sad ? 0 : Math.PI; smileMesh.position.y = MOUTH_Y - (sad ? 0.026 : 0);
+  smileMesh.scale.set(0.45 + fC.smile * 0.75, 0.25 + fC.smile * 0.85, 1);
+  openMesh.visible = fC.open >= 0.25; openMesh.scale.set(0.7 + fC.open * 0.3, 0.35 + fC.open * 0.8, 0.35);
+  blinkT -= dt; if (blinkT < 0) blinkT = rand(2, 5);
+  const ey = (blinkT < 0.12 ? 0.1 : 1) * (1 - 0.88 * fC.closed);
+  eyes.forEach(e => e.scale.y = ey);
+  brows.forEach(b => { b.position.y = b.userData.y0 + fC.brow * 0.022; b.rotation.z = b.userData.s * (fC.brow * -0.3 - 0.06); });
+
+  // 手里拿的东西
+  man.updateWorldMatrix(true, true);
+  const ry = man.rotation.y, fx = Math.sin(ry), fz = Math.cos(ry);
+  mugTilt += (mugTiltT - mugTilt) * k8;
+  if (held.mug) {
+    room.worldToLocal(handA.getWorldPosition(tmpV));
+    mug.position.set(tmpV.x + fx * 0.07, tmpV.y - 0.03, tmpV.z + fz * 0.07); mug.rotation.set(-mugTilt, ry, 0);
+    room.worldToLocal(headPt(tmpV2, 0, AV.mouthUp, AV.mouthFwd)); tmpV2.y -= 0.09;
+    mug.position.lerp(tmpV2, clamp(mugTilt / 0.6, 0, 1));
+  }
+  if (held.phone) {
+    room.worldToLocal(handB.getWorldPosition(tmpV));
+    phone.position.set(tmpV.x, tmpV.y + 0.1, tmpV.z); phone.rotation.set(Math.PI / 2, ry, Math.PI / 2);
+    earK += ((step && step.ear ? 1 : 0) - earK) * k8;
+    room.worldToLocal(headPt(tmpV2, -AV.earSide, AV.earUp, 0.02)); phone.position.lerp(tmpV2, earK);
+  }
+  if (held.book) {
+    room.worldToLocal(handA.getWorldPosition(tmpV)); room.worldToLocal(handB.getWorldPosition(tmpV2));
+    book.position.copy(tmpV).add(tmpV2).multiplyScalar(0.5); book.position.y += 0.03; book.rotation.set(-0.7, ry, 0);
+  }
+  if (held.paper) { room.worldToLocal(handA.getWorldPosition(tmpV)); paper.position.set(tmpV.x + fx * 0.05, tmpV.y, tmpV.z + fz * 0.05); paper.rotation.x += dt * 5; }
+  if (ball.flying) {
+    ball.u += dt / 0.95; const u = Math.min(1, ball.u);
+    paper.position.lerpVectors(ball.p0, ball.p1, u); paper.position.y += 4 * 0.9 * u * (1 - u); paper.rotation.x += dt * 9; paper.rotation.z += dt * 7;
+    if (u >= 1) {
+      ball.flying = false; paper.visible = false;
+      if (!ball.hit) {
+        const l = add(paperGeo, paperM, ball.p1.x, 0.05, ball.p1.z, room); l.rotation.set(rand(0, 3), rand(0, 3), 0); litter.push(l);
+        if (litter.length > 6) room.remove(litter.shift());
+      } else sfx.click();
+    }
+  }
+  if (ringing) {
+    phone.rotation.y = Math.sin(t * 55) * 0.18; phone.position.y = PHONE_HOME.y + Math.abs(Math.sin(t * 40)) * 0.012;
+    ringClock -= dt; if (ringClock <= 0) { sfx.ring(); ringClock = 0.55; }
+  }
+  phoneFace.material.emissiveIntensity = (ringing && Math.floor(t * 6) % 2) || held.phone ? 1.6 : 0;
+
+  tickBot(dt); tickDecor(dt, t); tickGame(dt, t); tickOffice(dt, t); tickFollow(dt);
+  plantW *= Math.exp(-dt * 1.6); leaves.rotation.z = Math.sin(t * 14) * 0.22 * plantW; leaves.rotation.x = Math.cos(t * 11) * 0.12 * plantW;
+
+  // 气泡
+  manBub.tick(dt); botBub.tick(dt); catBub.tick(dt);
+  catBub.sp.position.set(cat.position.x, cat.position.y + 0.7, cat.position.z);
+  headRef.getWorldPosition(tmpV); room.worldToLocal(tmpV);
+  manBub.sp.position.set(tmpV.x, tmpV.y + (lying ? AV.bubble * 0.8 : AV.bubble) + Math.sin(t * 3) * 0.02, tmpV.z);
+  botBub.sp.position.set(robot.position.x, 0.65, robot.position.z);
+
+  // 屏幕 / HUD
+  screenClock += dt; if (screenClock > 0.08) { screenClock = 0; drawScreen(t); }
+  hudClock += dt; if (hudClock > 0.2) { hudClock = 0; drawHud(); }
+
+  // 昼夜
+  nightK += (night - nightK) * (1 - Math.exp(-dt * 2.5));
+  el('bgNight').style.opacity = nightK.toFixed(3);
+  sun.intensity = lerp(2.6, 0.3, nightK); sun.color.copy(dayCol).lerp(nightCol, nightK);
+  hemi.intensity = lerp(0.9, 0.16, nightK);
+  scene.environmentIntensity = lerp(0.9, 0.12, nightK);
+  starMat.opacity = nightK;
+  frameMat.emissiveIntensity = lerp(0.6, 2.4, nightK);
+  lampLight.intensity += ((lampOn ? 1 : 0) * lerp(5, 9, nightK) - lampLight.intensity) * k8;
+  bulbMat.emissiveIntensity = lampLight.intensity * 0.5;
+  screenLight.intensity = screenMode === 2 ? 0 : lerp(0.4, 3.2, nightK);
+  pendLight.intensity = pendLight2.intensity = lerp(0, 5, nightK); pendMat.emissiveIntensity = lerp(0.4, 2.2, nightK);
+  holos.forEach((h, i) => { h.position.y = h.userData.y0 + Math.sin(t * 1.1 + i * 2) * 0.05; h.material.opacity = lerp(0.6, 0.95, nightK); });
+  renderer.toneMappingExposure = lerp(0.82, 1.0, nightK);
+
+  // 摇晃 + 粒子
+  tickParts(dt, t);
+  const sk = shakeT > 0 ? (shakeT -= dt, Math.max(0, shakeT) / 1.3) : 0;
+  world.position.set(Math.sin(t * 52) * 0.14 * sk, Math.sin(t * 0.8) * 0.08 + Math.cos(t * 47) * 0.06 * sk, 0);
+  world.rotation.z = Math.sin(t * 41) * 0.05 * sk; world.rotation.x = Math.cos(t * 37) * 0.03 * sk;
+
+  controls.update();
+  renderer.render(scene, camera);
+  if (!simDt) requestAnimationFrame(frame);
+}
+let simDt = 0, simT = 0, frozen = false;   // 测试用：页面隐藏时手动快进
+function sim(sec, freeze = true) { simDt = 1 / 30; for (let i = 0; i < sec * 30; i++) frame(); simDt = 0; frozen = freeze; }
+const unfreeze = () => { frozen = false; };
+drawScreen(0); drawHud();
+frame();
+window.__dbg = { request, command, st, camera, controls, man, npcs, officeReact, sim, unfreeze, save, game, boss, state: () => ({ step: !!step, left: steps.length, pending, sleeping, status: statusEl.textContent, litter: litter.length, ...st }) };
+</script>
+</body>
+</html>

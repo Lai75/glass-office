@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>我的替身 · 玻璃方格</title>
+<style>
+  html, body { margin: 0; min-height: 100%; font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif; color: #16324a;
+    background: radial-gradient(ellipse at 50% 30%, #eaf4fb 0%, #c3dbef 50%, #94b8dc 100%); }
+  main { max-width: 760px; margin: 0 auto; padding: 56px 20px; }
+  h1 { margin: 0 0 8px; font-size: 30px; letter-spacing: 2px; }
+  .sub { opacity: .75; margin: 0 0 32px; line-height: 1.7; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  a.card { display: block; text-decoration: none; color: inherit; padding: 22px; border-radius: 18px; background: rgba(255,255,255,.65);
+    border: 1px solid rgba(255,255,255,.8); backdrop-filter: blur(8px); transition: transform .15s, box-shadow .15s; }
+  a.card:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(30,80,160,.18); }
+  .card b { font-size: 20px; display: block; margin-bottom: 8px; }
+  .card p { margin: 0; font-size: 14px; line-height: 1.7; opacity: .85; }
+  .card span { display: inline-block; margin-top: 14px; font-size: 14px; color: #2289ee; font-weight: 600; }
+  footer { margin-top: 36px; font-size: 13px; opacity: .65; line-height: 1.8; }
+</style>
+</head>
+<body>
+<main>
+  <h1>我的替身</h1>
+  <p class="sub">玻璃方格里的小人就是你。现实里不敢做的事——怼老板、掀桌子、准点下班、辞职去海边——交给他。</p>
+  <div class="cards">
+    <a class="card" href="solo.html"><b>🧍 一个人的方格</b><p>只有你和你的工位。设定你的名字和样子，打字或点按钮让替身替你发泄、偷懒、逃离。</p><span>打开 →</span></a>
+    <a class="card" href="office.html"><b>👥 同事的方格</b><p>开放式办公室，六个有性格的同事：卷王、摸鱼搭子、八卦王、马屁精、实习生、佛系。他们会对替身做的事起反应，也可以照着你的真实同事来改。</p><span>打开 →</span></a>
+  </div>
+  <footer>老板来了？按 Esc，一秒变成 Excel 周报。<br>记录只保存在你自己的浏览器里。需要联网加载 3D 引擎（three.js）。</footer>
+</main>
+</body>
+</html>
