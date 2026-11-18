@@ -136,6 +136,8 @@
   #tip { position: fixed; z-index: 6; pointer-events: none; padding: 4px 10px; border-radius: 8px; font-size: 13px;
     background: rgba(20,30,60,.85); color: #fff; opacity: 0; transition: opacity .15s; transform: translate(14px, 14px); white-space: nowrap; }
   #err { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 9; color: #16324a; font-size: 16px; text-align: center; padding: 20px; }
+  #sub { bottom: 150px; left: 50%; transform: translateX(-50%); padding: 7px 16px; border-radius: 12px; background: rgba(20,30,60,.72); color: #fff !important;
+    font-size: 15px; opacity: 0; transition: opacity .25s; pointer-events: none; white-space: nowrap; max-width: 92vw; overflow: hidden; text-overflow: ellipsis; }
 </style>
 </head>
 <body>
@@ -156,6 +158,7 @@
 </div>
 <div id="flash"></div>
 <div class="ui" id="toast"></div>
+<div class="ui" id="sub"></div>
 <div class="modal" id="prof"><div class="mbox">
   <h2><span id="profTitle">👤 先告诉我你是谁</span><button id="profClose">✕</button></h2>
   <div class="hint2">方块里的人就是你。现实里你不敢做的事，交给他。</div>
@@ -196,7 +199,7 @@
 </div>
 <div class="ui" id="top">
   <button id="btnCw">👥 同事</button>
-  <button id="btnCam">🎥 跟随</button>
+  <button id="btnCam">🎥 全景</button>
   <button id="btnDiary">📓 日记</button>
   <button id="btnProf">👤 我</button>
   <button id="btnSound">🔊 声音</button>
@@ -246,7 +249,8 @@ const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 200);
 const CAM_HOME = new THREE.Vector3(5.2, 5.6, 13.2).multiplyScalar(Math.min(1.9, Math.max(1, 1.75 / (innerWidth / innerHeight))));
 camera.position.copy(CAM_HOME);
 const controls = new OrbitControls(camera, canvas);
-controls.target.set(0, -0.9, 0);
+const CAM_TGT = new THREE.Vector3(0, -0.9, 0);
+controls.target.copy(CAM_TGT);
 controls.enableDamping = true;
 controls.enablePan = false;
 controls.minDistance = 2.5;
@@ -1532,7 +1536,7 @@ canvas.addEventListener('pointerdown', e => {
 });
 canvas.addEventListener('pointerup', e => {
   if (grab.on) { grabEnd(); down = null; downMan = false; return; }
-  const wasMan = downMan; if (downMan) controls.enabled = true; downMan = false;
+  const wasMan = downMan; if (downMan) controls.enabled = !camPersonal(); downMan = false;
   if (!down) return;
   const moved = Math.hypot(e.clientX - down[0], e.clientY - down[1]); down = null;
   if (moved > 6) return;
@@ -1542,7 +1546,7 @@ canvas.addEventListener('pointermove', e => {
   ptrN.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); ptrAge = 0;
   if (grab.on) { grabMove(e); return; }
   if (downMan && down && Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 8) {
-    if (grabStart()) grabMove(e); else { downMan = false; controls.enabled = true; }
+    if (grabStart()) grabMove(e); else { downMan = false; controls.enabled = !camPersonal(); }
     tipEl.style.opacity = 0; return;
   }
   if (e.buttons) { tipEl.style.opacity = 0; return; }
@@ -1777,7 +1781,7 @@ function grabMove(e) {
   if (grab.ox === null) { grab.ox = man.position.x - gp.x; grab.oz = man.position.z - gp.z; }
   grab.tx = clamp(gp.x + grab.ox, -2.4, 7.8); grab.tz = clamp(gp.z + grab.oz, -2.4, 2.4); grab.ty = 0.95;
 }
-function grabEnd() { grab.on = false; grab.fall = true; grab.vy = 0; controls.enabled = true; }
+function grabEnd() { grab.on = false; grab.fall = true; grab.vy = 0; controls.enabled = !camPersonal(); }
 function land() {
   boing(1.7); shakeT = 0.25; sfx.miss(); tone(90, 0.15, 'sine', 0.15); emote('💫'); Object.assign(tgt, STAND);
   const zones = [['f_bed', -1.5, -1.9, 1.15], ['f_arcade', -1.9, 2.0, 0.95], ['f_cooler', 1.9, 0.6, 0.85], ['leave', 1.75, -2.0, 0.8]];
@@ -2259,22 +2263,6 @@ el('btnCw').addEventListener('click', openCwPanel);
 el('cwClose').addEventListener('click', () => el('cwPanel').classList.remove('open'));
 el('cwPanel').addEventListener('pointerdown', e => { if (e.target === el('cwPanel')) el('cwPanel').classList.remove('open'); });
 
-/* ---- 镜头跟随我的替身 ---- */
-let follow = false;
-const camOff = new THREE.Vector3(), folT = new THREE.Vector3();
-el('btnCam').addEventListener('click', () => {
-  follow = !follow; el('btnCam').classList.toggle('on', follow);
-  if (follow) { man.getWorldPosition(folT); folT.y += 0.8; camOff.copy(camera.position).sub(controls.target).setLength(5.5); camera.position.copy(folT).add(camOff); controls.target.copy(folT); }
-  else { controls.target.set(0, -0.9, 0); camera.position.copy(CAM_HOME); }
-});
-function tickFollow(dt) {
-  if (!follow) return;
-  man.getWorldPosition(folT); folT.y += man.visible ? 0.8 : 0.4;
-  const k = 1 - Math.exp(-dt * 4);
-  camOff.subVectors(folT, controls.target).multiplyScalar(k);
-  controls.target.add(camOff); camera.position.add(camOff);
-}
-
 CMDS.push(
   { id: 'cw_roll', relief: 12, log: () => `对${NM(npcs[cwTarget])}翻了个大白眼` },
   { id: 'cw_coffee', relief: 6, log: () => `给${NM(npcs[cwTarget])}送了杯咖啡` },
@@ -2304,6 +2292,92 @@ function tickDecor(dt, t) {
   catEyes.forEach(e => { e.scale.y = sleepy ? 0.15 : 1; });
 }
 
+/* ---------- 视角：全景 / 跟随 / 背后 / 第一人称（按 V 切换） ---------- */
+const VIEWS = [['orbit', '🎥 全景'], ['follow', '🎯 跟随'], ['back', '🧍 背后'], ['fp', '👀 第一人称']];
+let view = 0, camAway = false, camSnap = true;
+const fpLook = { yaw: 0, pitch: 0, drag: null };
+const camOff = new THREE.Vector3(), folT = new THREE.Vector3(), eyeP = new THREE.Vector3(), camPT = new THREE.Vector3();
+const camQT = new THREE.Quaternion(), headQ = new THREE.Quaternion(), lookQ = new THREE.Quaternion(), _ce = new THREE.Euler(0, 0, 0, 'YXZ');
+const FLIP_Y = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
+const EYE_LOCAL = new THREE.Vector3(0, EYE_Y + 0.02, faceZ(0, EYE_Y) - 0.12);   // 眼睛稍微往后放，视野别贴着显示器
+const camMode = () => VIEWS[view][0];
+/* 背后、第一人称这两种视角由我们自己摆镜头，轨道控制器不能插手 */
+function camPersonal() { const m = camMode(); return (m === 'fp' || m === 'back') && !camAway; }
+const subEl = el('sub');
+let subT = 0;
+{ const say0 = manBub.say; manBub.say = (text, dur = 2) => { say0(text, dur); subEl.textContent = `${save.name || '他'}：${text}`; subT = dur + 0.4; }; }
+function applyView() {
+  const m = camMode(), pers = camPersonal(), fp = m === 'fp' && !camAway;
+  controls.enabled = !pers;
+  camera.fov = fp ? 80 : pers ? 55 : 35; camera.near = pers ? 0.02 : 0.1; camera.updateProjectionMatrix();
+  headRef.visible = !fp;                       // 第一人称时藏起自己的脑袋，不然镜头在脑袋里
+  manBub.sp.visible = !fp;
+  document.body.classList.toggle('fpv', pers);
+  if (!pers && (m === 'orbit' || camAway)) { controls.target.copy(CAM_TGT); camera.position.copy(CAM_HOME); }
+  if (m === 'follow' && !camAway) { man.getWorldPosition(folT); folT.y += 0.8; camOff.copy(CAM_HOME).sub(CAM_TGT).setLength(5.5); camera.position.copy(folT).add(camOff); controls.target.copy(folT); }
+  fpLook.yaw = fpLook.pitch = 0; camSnap = true;
+}
+function setView(i, quiet) {
+  view = (i + VIEWS.length) % VIEWS.length; save.view = view; persist();
+  el('btnCam').textContent = VIEWS[view][1];
+  camAway = false; applyView();
+  if (!quiet) toast({ orbit: '全景：拖动旋转，滚轮缩放 · 按 V 切换视角', follow: '跟随：镜头跟着他走 · 按 V 切换视角',
+    back: '背后视角：拖动屏幕看四周 · 按 V 切换视角', fp: '第一人称：你就是他，拖动屏幕转头 · 按 V 切换视角' }[camMode()]);
+}
+el('btnCam').addEventListener('click', () => setView(view + 1));
+addEventListener('keydown', e => {
+  if (bossKeyOn || e.repeat || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+  if (e.key === 'v' || e.key === 'V') setView(view + 1);
+});
+/* 拖动转头（只在背后 / 第一人称时生效；按住替身拖动仍然是拎起来） */
+canvas.addEventListener('pointerdown', e => { fpLook.drag = camPersonal() && !downMan ? [e.clientX, e.clientY] : null; });
+addEventListener('pointerup', () => { fpLook.drag = null; });
+canvas.addEventListener('pointermove', e => {
+  if (!fpLook.drag || !e.buttons || grab.on || !camPersonal()) return;
+  const s = 3.2 / Math.max(innerHeight, 400);
+  fpLook.yaw = clamp(fpLook.yaw - (e.clientX - fpLook.drag[0]) * s, -2.6, 2.6);
+  fpLook.pitch = clamp(fpLook.pitch - (e.clientY - fpLook.drag[1]) * s, -1.3, 1.2);
+  fpLook.drag = [e.clientX, e.clientY];
+});
+canvas.addEventListener('dblclick', () => { if (camPersonal()) fpLook.yaw = fpLook.pitch = 0; });
+function tickCam(dt) {
+  const hideMe = camMode() === 'fp' && !camAway; for (const e of emotes) e.sp.visible = !hideMe;   // 头顶冒的符号也别挡眼睛
+  if (subT > 0) { subT -= dt; subEl.style.opacity = camMode() === 'fp' && subT > 0 ? 1 : 0; }
+  const m = camMode();
+  // 他离开方格（辞职、下班、去海边）时没有眼睛可借，先退回全景，回来再接上
+  const gone = !man.visible && m !== 'orbit';
+  if (gone !== camAway) { camAway = gone; applyView(); }
+  if (camAway || m === 'orbit') return;
+  if (m === 'follow') {
+    man.getWorldPosition(folT); folT.y += 0.8;
+    const k = 1 - Math.exp(-dt * 4);
+    camOff.subVectors(folT, controls.target).multiplyScalar(k);
+    controls.target.add(camOff); camera.position.add(camOff);
+    return;
+  }
+  controls.enabled = false;
+  headRef.updateWorldMatrix(true, false);
+  if (m === 'fp') {
+    // 借他的眼睛：位置在脸前一点，朝向跟着他的头（低头打字、躺下看天花板、被拎起来晃）
+    headRef.localToWorld(eyeP.copy(EYE_LOCAL));
+    headRef.getWorldQuaternion(headQ);
+    camQT.copy(headQ).multiply(FLIP_Y);
+    camPT.copy(eyeP);
+  } else {
+    // 背后：只跟身体转向，不跟头晃，镜头更稳
+    headRef.getWorldPosition(eyeP);
+    _ce.set(-0.32, man.rotation.y + Math.PI, 0); camQT.setFromEuler(_ce);
+  }
+  camQT.multiply(lookQ.setFromEuler(_ce.set(fpLook.pitch, fpLook.yaw, 0)));
+  if (m === 'back') camPT.copy(eyeP).add(camOff.set(0, 0.05, 1.7).applyQuaternion(camQT));
+  if (camSnap) { camera.position.copy(camPT); camera.quaternion.copy(camQT); camSnap = false; }
+  else {
+    const kp = 1 - Math.exp(-dt * (m === 'fp' ? 25 : 7)), kr = 1 - Math.exp(-dt * (m === 'fp' ? 10 : 7));
+    camera.position.lerp(camPT, kp); camera.quaternion.slerp(camQT, kr);
+  }
+}
+setView(save.view || 0, true);
+
 /* ---------- 主循环 ---------- */
 const clock = new THREE.Clock(), tmpV = new THREE.Vector3(), tmpV2 = new THREE.Vector3();
 const dayCol = new THREE.Color(0xfff4e0), nightCol = new THREE.Color(0x8fa8ff);
@@ -2311,7 +2385,7 @@ const fC = { smile: 0.6, open: 0, brow: 0, closed: 0 };
 let blinkT = rand(2, 4), hudClock = 0, earK = 0;
 function frame() {
   if (bossKeyOn) { clock.getDelta(); requestAnimationFrame(frame); return; }
-  if (frozen && !simDt) { clock.getDelta(); controls.update(); renderer.render(scene, camera); requestAnimationFrame(frame); return; }
+  if (frozen && !simDt) { clock.getDelta(); if (!camPersonal()) controls.update(); renderer.render(scene, camera); requestAnimationFrame(frame); return; }
   const dt = simDt || Math.min(clock.getDelta(), 0.05), t = simDt ? (simT += simDt) : clock.elapsedTime + simT;
   const k8 = 1 - Math.exp(-dt * 8);
 
@@ -2388,7 +2462,7 @@ function frame() {
   }
   phoneFace.material.emissiveIntensity = (ringing && Math.floor(t * 6) % 2) || held.phone ? 1.6 : 0;
 
-  tickBot(dt); tickDecor(dt, t); tickGame(dt, t); tickOffice(dt, t); tickFollow(dt);
+  tickBot(dt); tickDecor(dt, t); tickGame(dt, t); tickOffice(dt, t); tickCam(dt);
   plantW *= Math.exp(-dt * 1.6); leaves.rotation.z = Math.sin(t * 14) * 0.22 * plantW; leaves.rotation.x = Math.cos(t * 11) * 0.12 * plantW;
 
   // 气泡
@@ -2423,7 +2497,7 @@ function frame() {
   world.position.set(Math.sin(t * 52) * 0.14 * sk, Math.sin(t * 0.8) * 0.08 + Math.cos(t * 47) * 0.06 * sk, 0);
   world.rotation.z = Math.sin(t * 41) * 0.05 * sk; world.rotation.x = Math.cos(t * 37) * 0.03 * sk;
 
-  controls.update();
+  if (!camPersonal()) controls.update();
   renderer.render(scene, camera);
   if (!simDt) requestAnimationFrame(frame);
 }
