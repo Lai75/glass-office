@@ -116,7 +116,7 @@
     <li>18:00 以后从门口离开就是下班；提前走也行，别被看见。</li>
   </ul>
   <p class="sub tOnly">左下摇杆走路 · 右边拖动转头 · 按住 <b>E</b> 互动 · <b>蹲</b> 躲在桌子后面 · 右上角可以切全景和老板键</p>
-  <p class="sub kOnly"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 走路 · 鼠标看 · <kbd>Shift</kbd> 跑（会有脚步声） · <kbd>C</kbd> 蹲 · <kbd>E</kbd> 互动 · <kbd>Tab</kbd> 从工位起身 · <kbd>V</kbd> 切换第一人称 / 第三人称 / 全景（全景看得清，但你在发呆） · <kbd>Esc</kbd> 老板键</p>
+  <p class="sub kOnly"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 走路 · 鼠标看 · <kbd>Shift</kbd> 跑（会有脚步声） · <kbd>C</kbd> 蹲 · <kbd>E</kbd> 互动 · <kbd>Tab</kbd> 从工位起身 · <kbd>V</kbd> 或鼠标右键 切换第一人称 / 第三人称 / 全景（全景看得清，但你在发呆；坐着打字时用右键或 <kbd>Alt</kbd>+<kbd>V</kbd>） · <kbd>Esc</kbd> 老板键</p>
   <div class="btns"><button id="btnRestart">重新开始一周</button><button id="btnStart" class="primary">开始</button></div>
 </div></div>
 <div class="ov" id="ovDay"><div class="box">
@@ -830,7 +830,7 @@ function tickPlayer(dt) {
   if (G.view === 'top') { el('prompt').style.display = 'none'; }
   else if (s) {
     el('prompt').style.display = 'block'; el('pBar').style.width = '0%';
-    el('pTxt').innerHTML = `⌨️ 直接打字写周报（今天 ${G.chars} 字）　${isTouch ? '点 <b>E</b>' : '<kbd>Tab</kbd>'} 起身`;
+    el('pTxt').innerHTML = `⌨️ 直接打字写周报（今天 ${G.chars} 字）　${isTouch ? '点 <b>E</b> 起身' : '<kbd>Tab</kbd> 起身 · 右键或 <kbd>Alt</kbd>+<kbd>V</kbd> 切视角'}`;
     if (eDown) standUp();
   } else if (id === 'desk') {
     el('prompt').style.display = 'block'; el('pTxt').innerHTML = `<kbd>E</kbd> 坐下工作`; el('pBar').style.width = '0%';
@@ -1075,6 +1075,7 @@ addEventListener('keydown', e => {
   if (e.key === 'Escape') { e.preventDefault(); setBossKey(!bossKeyOn); return; }
   if (bossKeyOn) return;
   if (e.key === 'Tab') { e.preventDefault(); if (G.on && !G.paused && P.seated) standUp(); return; }
+  if (e.code === 'KeyV' && e.altKey) { e.preventDefault(); if (!e.repeat) cycleView(); return; }   // 坐着打字时用 Alt+V，不会打进周报
   if (e.target === typer) return;   // 坐在工位上时，键盘打的字都进周报
   keys.add(e.code);
   if (e.code === 'KeyE') eHeld = true;
@@ -1143,6 +1144,9 @@ function applyView() {
   else { unlock(); typer.blur(); camera.position.set(P.x * 0.3, 15, P.z * 0.3 + 12); controls.target.set(0, 0, 0.5); }
 }
 el('btnView').addEventListener('click', cycleView);
+// 鼠标右键也能切视角（坐着打字时最顺手）
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('mousedown', e => { if (e.button === 2 && G.on && !G.paused && !bossKeyOn) { e.preventDefault(); cycleView(); } });
 const drawSound = () => { el('btnSound').textContent = muted ? '🔇 静音' : '🔊 声音'; };
 el('btnSound').addEventListener('click', () => { muted = !muted; sv.muted = muted; persist(); drawSound(); }); drawSound();
 el('btnKey').addEventListener('click', () => setBossKey(true));
