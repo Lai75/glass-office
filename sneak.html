@@ -31,6 +31,7 @@
   #topBtns button { padding: 5px 10px; font-size: 12px; }
   #cross { left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: rgba(255,255,255,.9); box-shadow: 0 0 0 1.5px rgba(20,40,70,.5); pointer-events: none; }
   #prompt { left: 50%; top: calc(50% + 34px); transform: translateX(-50%); padding: 7px 14px; font-size: 14px; text-align: center; display: none; pointer-events: none; min-width: 180px; }
+  #prompt.low { top: auto; bottom: 22px; }
   #prompt .barw { margin-top: 6px; } #prompt .barw i { background: #3aa0ff; transition: none; }
   #eye { top: 70px; left: 50%; transform: translateX(-50%); padding: 7px 16px; font-size: 14px; font-weight: 700; text-align: center; opacity: 0; transition: opacity .15s; pointer-events: none; min-width: 220px; background: rgba(30,40,70,.85); color: #fff; border-radius: 14px; }
   #eye.hot { background: rgba(225,45,70,.92); }
@@ -66,6 +67,7 @@
     #toast { top: 156px; white-space: normal; text-align: center; border-radius: 14px; width: max-content; max-width: 70vw; }
     #eye { top: 210px; }
   }
+  #typer { position: fixed; left: 50%; bottom: 0; width: 2px; height: 2px; opacity: 0; font-size: 16px; border: 0; padding: 0; resize: none; z-index: 1; }
   /* 老板键 */
   #bk { position: fixed; inset: 0; z-index: 50; display: none; flex-direction: column; background: #fff; color: #222; font: 12px "Microsoft YaHei", "Segoe UI", sans-serif; }
   #bkTop { background: #217346; color: #fff; padding: 7px 14px; display: flex; gap: 22px; font-size: 13px; }
@@ -99,20 +101,22 @@
 <div class="ui" id="toast"></div>
 <div id="vig"></div><div id="dark"></div><div id="flash"></div>
 <div class="ui" id="joy"><div id="joyK"></div></div>
+<textarea id="typer" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="在电脑上打字"></textarea>
 <div class="ui" id="mBtns"><button id="mE">E</button><button id="mC">蹲</button></div>
 
 <div class="ov open" id="ovStart"><div class="box">
   <h1>🐟 我的替身 · 摸鱼潜行</h1>
   <p class="sub">一周五天。你就是方格里的替身：KPI 要交得上，鱼也要摸得到，最重要的是——别被老板抓到。</p>
   <ul>
-    <li>坐在工位上工作会涨 <b>KPI</b>，但<b>压力</b>也会跟着涨；压力满了会当众崩溃。</li>
+    <li>坐在工位上<b>直接打字</b>就是在工作：你打的字会出现在替身的电脑屏幕上，KPI 跟着涨（中文输入法也行，复制粘贴不算）。但<b>压力</b>也会跟着涨，满了会当众崩溃。</li>
+    <li>小心你打的内容：<b>老板路过会看你的屏幕</b>，他也会突然来你工位找你。</li>
     <li>溜去清单上的地方<b>按住 E</b>摸鱼，能解压。老板的<b>视野</b>是地上那片红色扇形，被他看到正在摸鱼就会被抓。</li>
-    <li>走动本身不算摸鱼，但老板看久了也会起疑。<b>蹲下</b>可以躲在桌子后面。</li>
+    <li>走动本身不算摸鱼，但老板看久了也会起疑。<b>蹲下</b>可以躲在桌子后面。你看不到老板的时候，也不知道他在哪——听脚步声。</li>
     <li>听脚步声。<b>卷王</b>偶尔会回头，看到你摸鱼就去告状；<b>摸鱼搭子</b>会咳嗽提醒你老板来了；<b>八卦王</b>看到了会到处说。</li>
     <li>18:00 以后从门口离开就是下班；提前走也行，别被看见。</li>
   </ul>
   <p class="sub tOnly">左下摇杆走路 · 右边拖动转头 · 按住 <b>E</b> 互动 · <b>蹲</b> 躲在桌子后面 · 右上角可以切全景和老板键</p>
-  <p class="sub kOnly"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 走路 · 鼠标看 · <kbd>Shift</kbd> 跑（会有脚步声） · <kbd>C</kbd> 蹲 · <kbd>E</kbd> 互动 · <kbd>V</kbd> 全景（看清局势，但你会发呆） · <kbd>Esc</kbd> 老板键</p>
+  <p class="sub kOnly"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 走路 · 鼠标看 · <kbd>Shift</kbd> 跑（会有脚步声） · <kbd>C</kbd> 蹲 · <kbd>E</kbd> 互动 · <kbd>Tab</kbd> 从工位起身 · <kbd>V</kbd> 切换第一人称 / 第三人称 / 全景（全景看得清，但你在发呆） · <kbd>Esc</kbd> 老板键</p>
   <div class="btns"><button id="btnRestart">重新开始一周</button><button id="btnStart" class="primary">开始</button></div>
 </div></div>
 <div class="ov" id="ovDay"><div class="box">
@@ -443,7 +447,7 @@ function tickChar(c, dt, t) {
   c.bub.sp.position.set(c.root.position.x, (c.mode === 'lie' ? 1.0 : 1.95) * (c.scale || 1), c.root.position.z);
   if (c.label) {
     c.label.position.set(c.root.position.x, 1.62 * (c.scale || 1), c.root.position.z);
-    c.label.visible = c.root.visible && (G.view !== 'fp' || Math.hypot(P.x - c.root.position.x, P.z - c.root.position.z) > 2.6);   // 凑太近时名牌会糊满屏幕
+    c.label.visible = c.root.visible && (G.view === 'top' || Math.hypot(P.x - c.root.position.x, P.z - c.root.position.z) > 2.6);   // 凑太近时名牌会糊满屏幕
   }
 }
 
@@ -462,9 +466,9 @@ for (let j = -D + 1; j < D; j++) box(W * 2, 0.002, 0.015, lineM, 0, 0.001, j, sc
 // 玻璃外墙
 const glassM = new THREE.MeshPhysicalMaterial({ color: 0xdff0ff, transparent: true, opacity: 0.22, roughness: 0.05, transmission: 0.3, side: THREE.DoubleSide, depthWrite: false });
 const frameM = mat(0xffffff, { roughness: 0.3 });
-const HW = 2.6;
+const HW = 2.6, outerWalls = [];
 for (const [w, d, x, z] of [[W * 2, 0.06, 0, -D], [W * 2, 0.06, 0, D], [0.06, D * 2, -W, 0], [0.06, D * 2, W, 0]]) {
-  const g = box(w, HW, d, glassM, x, HW / 2, z, scene); g.castShadow = false; aabb(x - w / 2 - 0.05, z - d / 2 - 0.05, x + w / 2 + 0.05, z + d / 2 + 0.05);
+  const g = box(w, HW, d, glassM, x, HW / 2, z, scene); g.castShadow = false; outerWalls.push(g); aabb(x - w / 2 - 0.05, z - d / 2 - 0.05, x + w / 2 + 0.05, z + d / 2 + 0.05);
   box(w + 0.04, 0.06, d + 0.04, frameM, x, HW, z, scene);
 }
 // 磨砂隔墙（挡视线）
@@ -585,7 +589,7 @@ const npcs = CW_DESKS.map((d, i) => {
 });
 const npcOf = p => npcs.find(n => n.p === p);
 for (const p of ['grind', 'gossip']) {   // 会看人的同事也画出视野
-  const n = npcOf(p); n.cone = makeCone(p === 'grind' ? 5 : 4.2, p === 'grind' ? 0.55 : 0.5, p === 'grind' ? 0xffa040 : 0xd77bff, 0.16);
+  const n = npcOf(p); n.cone = makeCone(p === 'grind' ? 6 : 4.2, p === 'grind' ? 0.6 : 0.5, p === 'grind' ? 0xffa040 : 0xd77bff, 0.16);
 }
 
 // 老板
@@ -594,6 +598,7 @@ bossC.scale = 1.1; bossC.root.scale.setScalar(1.1); bossC.r.m.tieM.color.setHex(
 bossC.label = makeLabel(`👔 ${B()}`); bossC.label.scale.set(0.7, 0.18, 1);
 // 我（全景时才看得到）
 const meC = makeChar({ outfit: me0.outfit || 'suit', hair: me0.hair || 'short', hairHex: HAIRC[me0.hairCol] ?? HAIRC[0], skinHex: SKINC[me0.skin] ?? SKINC[0], shirtHex: me0.shirt >= 0 ? SHIRTC[me0.shirt] : undefined }, -5.6, 2.1, Math.PI);
+meC.root.rotation.order = 'YXZ';
 
 /* 视野扇形 */
 function makeCone(range, half, color, op) {
@@ -605,7 +610,8 @@ function makeCone(range, half, color, op) {
   m.position.y = 0.03; m.renderOrder = 2; scene.add(m); m.userData = { range, half, op };
   return m;
 }
-const bossCone = makeCone(7.5, 0.62, 0xff3b5c, 0.18);
+const BOSS_RANGE = 8.5, BOSS_HALF = 0.7;
+const bossCone = makeCone(BOSS_RANGE, BOSS_HALF, 0xff3b5c, 0.18);
 
 /* 视线：中间有墙、书架、桌子就看不到 */
 const ray = new THREE.Raycaster(), vA = new THREE.Vector3(), vB = new THREE.Vector3();
@@ -640,13 +646,13 @@ function collide(x, z, r = 0.24) {
 /* ---------- 摸鱼地点 ---------- */
 const SPOTS = {
   desk: { x: -5.6, z: 2.1, r: 0.9, label: '坐下工作' },
-  sofa: { x: -1.6, z: 4.55, r: 1.0, label: '躺沙发睡一觉', hold: 7, relief: 25, task: '在沙发上睡一觉', view: { y: 0.62, yaw: 0, pitch: 0.12 }, low: true, doze: true },
-  arcade: { x: 6.55, z: 4.6, r: 0.9, label: '打一局街机', hold: 6, relief: 20, task: '打一局街机', view: { y: 1.12, yaw: -Math.PI / 2, pitch: -0.05 } },
-  tea: { x: 6.85, z: 1.5, r: 0.9, label: '泡杯茶慢慢喝', hold: 4, relief: 12, task: '去茶水间泡杯茶', view: { y: 1.12, yaw: -Math.PI / 2, pitch: -0.35 } },
-  milk: { x: -1.5, z: 3.25, r: 0.75, label: '偷喝摸鱼搭子的奶茶', hold: 3, relief: 10, task: '偷喝摸鱼搭子的奶茶', view: { y: 0.8, yaw: 0, pitch: -0.4 }, low: true },
-  toilet: { x: -6.7, z: 4.5, r: 0.9, label: '带薪上厕所（里面谁也看不到）', hold: 9, relief: 15, task: '带薪上厕所', hide: true },
-  window: { x: 0.5, z: -2.3, r: 0.9, label: '在窗边看风景发呆', hold: 5, relief: 12, task: '在落地窗边发呆', view: { y: 1.12, yaw: 0, pitch: 0.05 } },
-  chair: { x: 6.5, z: -5.0, r: 0.8, label: `坐一下${B()}的椅子`, hold: 4, relief: 18, task: `偷坐${B()}的老板椅`, view: { y: 1.0, yaw: Math.PI, pitch: -0.1 } },
+  sofa: { x: -1.6, z: 4.55, r: 1.0, label: '躺沙发睡一觉', hold: 9, relief: 25, task: '在沙发上睡一觉', view: { y: 0.62, yaw: 0, pitch: 0.12 }, low: true, doze: true },
+  arcade: { x: 6.55, z: 4.6, r: 0.9, label: '打一局街机', hold: 8, relief: 20, task: '打一局街机', view: { y: 1.12, yaw: -Math.PI / 2, pitch: -0.05 } },
+  tea: { x: 6.85, z: 1.5, r: 0.9, label: '泡杯茶慢慢喝', hold: 5, relief: 12, task: '去茶水间泡杯茶', view: { y: 1.12, yaw: -Math.PI / 2, pitch: -0.35 } },
+  milk: { x: -1.5, z: 3.25, r: 0.75, label: '偷喝摸鱼搭子的奶茶', hold: 4, relief: 10, task: '偷喝摸鱼搭子的奶茶', view: { y: 0.8, yaw: 0, pitch: -0.4 }, low: true },
+  toilet: { x: -6.7, z: 4.5, r: 0.9, label: '带薪上厕所（里面谁也看不到）', hold: 12, relief: 15, task: '带薪上厕所', hide: true },
+  window: { x: 0.5, z: -2.3, r: 0.9, label: '在窗边看风景发呆', hold: 6, relief: 12, task: '在落地窗边发呆', view: { y: 1.12, yaw: 0, pitch: 0.05 } },
+  chair: { x: 6.5, z: -5.0, r: 0.8, label: `坐一下${B()}的椅子`, hold: 5, relief: 18, task: `偷坐${B()}的老板椅`, view: { y: 1.0, yaw: Math.PI, pitch: -0.1 } },
   exit: { x: 1.7, z: 5.35, r: 0.9, label: '推门下班', hold: 1.2 },
 };
 // 沙发、奶茶、老板椅在全景时换个可交互的位置判断
@@ -655,13 +661,13 @@ const TASK_POOL = ['sofa', 'arcade', 'tea', 'milk', 'toilet', 'window', 'chair']
 /* ---------- 一周 ---------- */
 const DAYS = [
   { n: '周一', tip: '周一老板特别精神：巡逻更勤，眼睛更尖。', det: 1.3, patrol: 3, tasks: 3 },
-  { n: '周二', tip: '平平无奇的周二。', det: 1, tasks: 3 },
-  { n: '周三', tip: '下午两点开周会，老板会在会议室待很久。', det: 1, tasks: 3, meetAt: 14 * 60 },
-  { n: '周四', tip: '老板今天心情不好：走得更快，抓到罚得更狠。', det: 1.1, speed: 1.25, harsh: 1.6, tasks: 4 },
-  { n: '周五', tip: '听说老板四点就走。', det: 1, tasks: 4, leaveAt: 16 * 60, early: true },
+  { n: '周二', tip: '老板今天爱突击检查工位。', det: 1.1, check: 2, tasks: 4 },
+  { n: '周三', tip: '下午两点开周会，老板会在会议室待很久。', det: 1.15, tasks: 4, meetAt: 14 * 60 },
+  { n: '周四', tip: '老板今天心情不好：走得更快，抓到罚得更狠。', det: 1.3, speed: 1.2, harsh: 1.5, check: 1, tasks: 5 },
+  { n: '周五', tip: '听说老板四点就走。', det: 1.2, tasks: 5, leaveAt: 16 * 60, early: true },
 ];
 const DAY_SEC = 180, START_M = 9 * 60, END_M = 18 * 60, OVER_M = 19 * 60, KPI_GOAL = 60;
-const G = { on: false, paused: true, m: START_M, kpi: 0, stress: 30, tasks: [], done: new Set(), caught: 0, rumors: 0, sus: 0, warnCd: 0, bell: false, view: 'fp', melt: 0, overtime: false, earlyOk: false };
+const G = { chars: 0, absent: 0, readMark: 0, on: false, paused: true, m: START_M, kpi: 0, stress: 30, tasks: [], done: new Set(), caught: 0, rumors: 0, sus: 0, warnCd: 0, bell: false, view: 'fp', melt: 0, overtime: false, earlyOk: false };
 const day = () => DAYS[Math.min(sv.day, 4)];
 
 /* ---------- 老板 AI ---------- */
@@ -681,14 +687,26 @@ function route(a, b) {
   const path = []; for (let n = b; n; n = prev[n]) path.unshift(n); return path.slice(1);
 }
 const nearestNode = (x, z, pool = Object.keys(NODES)) => pool.reduce((best, k) => Math.hypot(NODES[k][0] - x, NODES[k][1] - z) < Math.hypot(NODES[best][0] - x, NODES[best][1] - z) ? k : best, pool[0]);
-const boss = { node: 'S', path: [], state: 'office', t: 12, wait: 0, look: 0, lookT: 0, visible: true, speed: 1.15, meetings: 0, stare: 0, why: '' };
+const boss = { node: 'S', path: [], state: 'office', t: 12, wait: 0, look: 0, lookT: 0, visible: true, speed: 1.35, backT: 8, turnBack: 0, meetings: 0, stare: 0, why: '' };
 function bossGo(target, then) { boss.path = route(boss.node, target); boss.then = null; if (boss.path.length) boss.then = then; else if (then) then(); }   // 已经在目的地就直接接下一步
 function bossPlan() {
-  const d = day(), r = Math.random(), wP = 3 + (d.patrol || 0);
-  const tot = wP + 2 + 1.2;
+  const d = day(), r = Math.random(), wP = 3 + (d.patrol || 0), wC = 1.6 + (d.check || 0);
+  const tot = wP + wC + 2 + 1.2;
   if (r < wP / tot) { boss.state = 'patrol'; boss.t = rand(25, 40); boss.wait = 0; bossNextPatrol(); }
-  else if (r < (wP + 2) / tot) { boss.state = 'toOffice'; bossGo('S', () => { boss.state = 'office'; boss.t = rand(15, 26); }); }
-  else bossMeeting(rand(22, 34), false);
+  else if (r < (wP + wC) / tot) bossCheckDesk();
+  else if (r < (wP + wC + 2) / tot) { boss.state = 'toOffice'; bossGo('S', () => { boss.state = 'office'; boss.t = rand(12, 22); }); }
+  else bossMeeting(rand(20, 30), false);
+}
+/* 突击检查：走到你工位后面，看你在不在、屏幕上写了什么 */
+function bossCheckDesk() {
+  boss.state = 'toCheck';
+  bossGo('M', () => {
+    boss.state = 'check'; boss.t = 3.2; boss.lookT = 0;
+    if (!P.seated) {
+      sv.favor = clamp(sv.favor - 8, 0, 100); G.absent++;
+      bossC.bub.say('人呢？！', 2.6, true); sfx.huh(); toast(`😠 ${B()}来你工位找你，你不在！（好感 -8）`);
+    } else if (!readScreen(true)) bossC.bub.say(pickOne(['嗯…', '写得怎么样了？', '继续', '抓紧点']), 2);
+  });
 }
 function bossNextPatrol() {
   let next; const opts = ADJ[boss.node].filter(n => PATROL.includes(n));
@@ -720,10 +738,15 @@ function tickBoss(dt, t) {
   bossC.root.visible = true;
   if (boss.stare > 0) {   // 盯着你看
     boss.stare -= dt; bossC.rot = Math.atan2(P.x - bossC.root.position.x, P.z - bossC.root.position.z); boss.look *= 0.8;
+  } else if (boss.turnBack > 0) {   // 回头杀：走着走着突然回头看一眼
+    boss.turnBack -= dt; const tgt = NODES[boss.path[0]] || NODES[boss.node];
+    bossC.rot = Math.atan2(tgt[0] - bossC.root.position.x, tgt[1] - bossC.root.position.z) + Math.PI; boss.look *= 0.8;
   } else if (boss.path.length) {
     const tgt = NODES[boss.path[0]], p = bossC.root.position, dx = tgt[0] - p.x, dz = tgt[1] - p.z, dist = Math.hypot(dx, dz), sl = sp * dt;
     bossC.moving = true; bossC.spd = sp; bossC.rot = Math.atan2(dx, dz);
-    if (dist <= sl) { p.x = tgt[0]; p.z = tgt[1]; boss.node = boss.path.shift(); if (!boss.path.length) { boss.wait = boss.state === 'patrol' ? rand(1.5, 3.5) : 0; if (boss.then) { const f = boss.then; boss.then = null; f(); } } }
+    boss.backT -= dt;
+    if (boss.backT <= 0 && boss.state === 'patrol') { boss.backT = rand(6, 11); boss.turnBack = 1.3; }
+    if (dist <= sl) { p.x = tgt[0]; p.z = tgt[1]; boss.node = boss.path.shift(); if (!boss.path.length) { boss.wait = boss.state === 'patrol' ? rand(1, 2.5) : 0; if (boss.then) { const f = boss.then; boss.then = null; f(); } } }
     else { p.x += dx / dist * sl; p.z += dz / dist * sl; }
     // 脚步声：越近越响
     const pd = Math.hypot(P.x - p.x, P.z - p.z), ph = Math.floor(bossC.walkPh / Math.PI);
@@ -734,8 +757,9 @@ function tickBoss(dt, t) {
     boss.lookT += dt; boss.look = Math.sin(boss.lookT * 1.3) * (boss.state === 'office' ? 0.35 : 0.85);
     if (boss.state === 'office') { bossC.rot = 0; boss.t -= dt; if (boss.t <= 0) bossPlan(); }
     else if (boss.state === 'patrol') { boss.wait -= dt; boss.t -= dt; if (boss.wait <= 0) { if (boss.t <= 0) bossPlan(); else bossNextPatrol(); } }
+    else if (boss.state === 'check') { boss.t -= dt; bossC.rot = Math.atan2(myDesk.seat[0] - bossC.root.position.x, myDesk.seat[1] - bossC.root.position.z); boss.look = 0; if (boss.t <= 0) bossPlan(); }
     else if (boss.state === 'search') { boss.t -= dt; boss.look = Math.sin(boss.lookT * 2.2) * 1.1; if (boss.t <= 0) { boss.state = 'patrol'; boss.t = rand(10, 20); bossNextPatrol(); } }
-    else if (!boss.path.length && boss.state !== 'toOffice' && boss.state !== 'toMeeting' && boss.state !== 'investigate' && boss.state !== 'leaving') bossPlan();
+    else if (!boss.path.length && !['toOffice', 'toMeeting', 'investigate', 'leaving', 'toCheck', 'watch'].includes(boss.state)) bossPlan();
   }
   bossC.mode = boss.state === 'office' && !boss.path.length && boss.node === 'S' ? 'sit' : 'stand';
   bossC.headY = boss.look;
@@ -752,10 +776,10 @@ function tickNPCs(dt, t, slacking) {
   // 卷王：时不时回头看一眼
   const g = npcOf('grind');
   g.turnT -= dt;
-  if (g.turn <= 0 && g.turnT <= 0) { g.turn = 3.8; g.turnT = rand(13, 22) / (day().det || 1); g.bub.say('🤨', 0.9); }
+  if (g.turn <= 0 && g.turnT <= 0) { g.turn = 3.8; g.turnT = rand(8, 15) / (day().det || 1); g.bub.say('🤨', 0.9); }
   if (g.turn > 0) { g.turn -= dt; g.rot = g.turn > 0.4 && g.turn < 3.4 ? 0 : Math.PI; g.typing = false; } else { g.rot = Math.PI; g.typing = true; }
   g.cone.visible = g.turn > 0.4 && g.turn < 3.4;
-  if (g.cone.visible && slacking && g.cd <= 0 && canSee(g.root.position.x, g.root.position.z, g.root.rotation.y, 5, 0.55, 1.0)) {
+  if (g.cone.visible && slacking && g.cd <= 0 && canSee(g.root.position.x, g.root.position.z, g.root.rotation.y, 6, 0.6, 1.0)) {
     g.seeT += dt;
     if (g.seeT > 0.45) { g.seeT = 0; g.cd = 25; g.turn = 0.3; g.bub.say(`${B()}！有人摸鱼！`, 2.5, true); toast('😠 卷王看见了，去告状了！'); sfx.huh(); bossInvestigate(P.x, P.z, 'report'); G.sus = Math.max(G.sus, 0.3); }
   } else g.seeT = Math.max(0, g.seeT - dt);
@@ -770,7 +794,7 @@ function tickNPCs(dt, t, slacking) {
   const away = !P.seated;
   if (away && boss.visible && boss.state !== 'gone' && bu.cd <= 0) {
     const bd = Math.hypot(bossC.root.position.x - P.x, bossC.root.position.z - P.z);
-    if (bd < 5.5 && bossC.moving) { bu.cd = 12; if (Math.random() < 0.85) { bu.bub.say('咳咳！', 1.6); sfx.cough(); toast('🤧 摸鱼搭子在咳嗽：老板过来了！'); } }
+    if (bd < 5.5 && bossC.moving) { bu.cd = 12; if (Math.random() < 0.6) { bu.bub.say('咳咳！', 1.6); sfx.cough(); toast('🤧 摸鱼搭子在咳嗽：老板过来了！'); } }
   }
   // 马屁精：老板路过就拍马屁
   const su = npcOf('suck');
@@ -802,9 +826,11 @@ function tickPlayer(dt) {
   const id = P.act ? P.act.id : nearSpot(), sp = id && SPOTS[id];
   const ok = id && spotOk(id);
   const eDown = eHeld && !ePrev; ePrev = eHeld;
-  if (G.view !== 'fp') { el('prompt').style.display = 'none'; }
+  el('prompt').classList.toggle('low', s);
+  if (G.view === 'top') { el('prompt').style.display = 'none'; }
   else if (s) {
-    el('prompt').style.display = 'block'; el('pTxt').innerHTML = `工作中… KPI +　<kbd>E</kbd>/走动 起身`; el('pBar').style.width = '0%';
+    el('prompt').style.display = 'block'; el('pBar').style.width = '0%';
+    el('pTxt').innerHTML = `⌨️ 直接打字写周报（今天 ${G.chars} 字）　${isTouch ? '点 <b>E</b>' : '<kbd>Tab</kbd>'} 起身`;
     if (eDown) standUp();
   } else if (id === 'desk') {
     el('prompt').style.display = 'block'; el('pTxt').innerHTML = `<kbd>E</kbd> 坐下工作`; el('pBar').style.width = '0%';
@@ -828,8 +854,8 @@ function tickPlayer(dt) {
 
   // 移动
   const mv = moveInput();
-  if (s && (mv[0] || mv[1])) standUp();
-  if (P.act || P.seated || G.view !== 'fp') { P.moving = false; }
+  if (s && (joy[0] || joy[1])) standUp();   // 手机上推摇杆起身；电脑上 WASD 会打进周报里，用 Tab 起身
+  if (P.act || P.seated || G.view === 'top') { P.moving = false; }
   else {
     const spd = P.crouch ? 1.15 : P.run ? 3.4 : 2.1;
     const fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw), rx = Math.cos(P.yaw), rz = -Math.sin(P.yaw);
@@ -849,8 +875,41 @@ function tickPlayer(dt) {
   const eyeT = P.seated ? EYE.sit : P.act && SPOTS[P.act.id].view ? SPOTS[P.act.id].view.y : P.crouch ? EYE.crouch : EYE.stand;
   P.eyeY += (eyeT - P.eyeY) * Math.min(1, dt * 8);
 }
-function sitDown() { P.seated = true; P.crouch = false; P.x = myDesk.seat[0]; P.z = myDesk.seat[1]; P.yaw = 0; P.pitch = -0.25; sfx.pop(); }
-function standUp() { P.seated = false; [P.x, P.z] = collide(P.x, P.z + 0.45); }
+function sitDown() { P.seated = true; P.crouch = false; P.x = myDesk.seat[0]; P.z = myDesk.seat[1]; P.yaw = 0; P.pitch = 0.04; sfx.pop(); focusTyper(); }
+function standUp() { P.seated = false; [P.x, P.z] = collide(P.x, P.z + 0.45); typer.blur(); }
+
+/* ---------- 在替身的电脑上打字：你打的字就是他写的周报 ---------- */
+const typer = el('typer');
+let typedLen = 0, last2 = ['', ''], typeBudget = 8;
+function focusTyper() { if (!bossKeyOn) try { typer.focus({ preventScroll: true }); } catch (e) {} }
+function countTyped() {
+  if (typer.value.length > 800) { typer.value = typer.value.slice(-500); typedLen = Math.min(typedLen, typer.value.length); G.readMark = 0; }
+  const v = typer.value, added = v.length - typedLen; typedLen = v.length;
+  if (added <= 0 || !P.seated || !G.on || G.paused) return;
+  for (const ch of v.slice(-added)) {
+    if (/\s/.test(ch)) continue;
+    if (ch === last2[0] && ch === last2[1]) continue;   // 按住一个键不放不算
+    last2 = [last2[1], ch];
+    if (typeBudget < 1) continue;                      // 太快了（多半是在乱敲）
+    typeBudget -= 1; G.chars++; G.kpi = Math.min(100, G.kpi + 0.3);
+  }
+}
+typer.addEventListener('input', e => { if (!e.isComposing) countTyped(); });
+typer.addEventListener('compositionend', countTyped);
+typer.addEventListener('paste', e => { e.preventDefault(); toast('📋 复制粘贴不算工作量 😏'); });
+typer.addEventListener('keydown', e => { if (!e.repeat && e.key.length === 1) sfx.key(); tapT = 0.12; });
+let tapT = 0;
+/* 老板凑过来看屏幕 */
+const SLACK_RE = /摸鱼|下班|辞职|不干了|离职|跳槽|老板|领导|淘宝|购物车|游戏|好累|累死|好烦|烦死|睡觉|好困|工资|加薪|放假|周末|奶茶|外卖|moyu|xiaban|fuck|shit/i;
+function readScreen(force) {
+  const txt = typer.value.slice(G.readMark), m = txt.match(SLACK_RE);
+  if (!m) { if (force && G.chars > 40 && Math.random() < 0.5) { bossC.bub.say('嗯，写得还行', 2); sv.favor = clamp(sv.favor + 1, 0, 100); return true; } return false; }
+  G.readMark = typer.value.length;
+  bossC.bub.say(`「${m[0]}」？？`, 2.8, true);
+  toast(`👀 ${B()}看到你屏幕上写着「${m[0]}」…`);
+  setTimeout(() => { if (G.on && !G.paused) caught(); }, 900);
+  return true;
+}
 function finishAct() {
   const id = P.act.id, sp = SPOTS[id]; P.act = null;
   if (id === 'exit') { endDay(G.m < END_M ? 'early' : 'normal'); return; }
@@ -863,16 +922,17 @@ function finishAct() {
 function tickDetect(dt) {
   const slacking = !!(P.act && P.act.slack);
   let seen = false;
-  if (boss.visible && boss.state !== 'gone') seen = canSee(bossC.root.position.x, bossC.root.position.z, bossFacing(), 7.5, 0.62, 1.2 * 1.1);
+  if (boss.visible && boss.state !== 'gone') seen = canSee(bossC.root.position.x, bossC.root.position.z, bossFacing(), BOSS_RANGE, BOSS_HALF, 1.2 * 1.1);
   const inBossRoom = P.x > 4 && P.z < -2.6;
   const det = day().det || 1;
   let rate = 0;
-  if (seen && slacking) rate = 1.2 * det;
-  else if (seen && !P.seated) rate = (inBossRoom ? 0.7 : 0.16) * det * (P.run ? 2 : 1);
+  if (seen && slacking) rate = 1.8 * det;
+  else if (seen && !P.seated) rate = (inBossRoom ? 0.9 : 0.3) * det * (P.run ? 2 : 1);
   if (rate > 0) G.sus = Math.min(1, G.sus + rate * dt); else G.sus = Math.max(0, G.sus - 0.3 * dt);
   if (seen && G.sus > 0.35 && boss.stare <= 0.2) { boss.stare = 1.2; }
   if (seen && G.sus > 0.08) bossC.bub.say(G.sus > 0.6 ? '！？' : '？', 0.5, G.sus > 0.6);
   if (G.sus >= 1) { if (slacking || inBossRoom) caught(); else scolded(); }
+  if (P.seated && boss.visible && boss.state !== 'gone' && Math.hypot(bossC.root.position.x - P.x, bossC.root.position.z - P.z) < 2.2) readScreen(false);
   // HUD
   const eye = el('eye');
   eye.style.opacity = G.sus > 0.02 ? 1 : 0; eye.classList.toggle('hot', G.sus > 0.6);
@@ -885,18 +945,18 @@ function tickDetect(dt) {
 function caught() {
   const h = day().harsh || 1;
   G.caught++; G.sus = 0; P.act = null;
-  sv.favor = clamp(sv.favor - Math.round(12 * h), 0, 100); G.kpi = Math.max(0, G.kpi - 5); G.stress = Math.min(100, G.stress + 10);
+  sv.favor = clamp(sv.favor - Math.round(15 * h), 0, 100); G.kpi = Math.max(0, G.kpi - 5); G.stress = Math.min(100, G.stress + 10);
   sfx.caught(); flash();
   bossC.bub.say(pickOne(['上班时间在干什么！', '工资是让你来摸鱼的？', '来我办公室一趟！', '这个月绩效你自己看着办']), 3, true);
-  toast(`🚨 被${B()}抓到了！好感 -${Math.round(12 * h)}，KPI -5`);
+  toast(`🚨 被${B()}抓到了！好感 -${Math.round(15 * h)}，KPI -5`);
   // 拎回工位，老板跟过来盯一会儿
   sitDown(); boss.stare = 0; boss.state = 'watch';
   bossGo('M', () => { boss.stare = 6; boss.state = 'patrol'; boss.t = rand(8, 14); });
 }
 function scolded() {
-  G.sus = 0.3; sv.favor = clamp(sv.favor - 3, 0, 100);
+  G.sus = 0.3; sv.favor = clamp(sv.favor - 5, 0, 100);
   bossC.bub.say(pickOne(['晃来晃去干嘛？', '还不回去干活？', '你的工位在那边']), 2.4); sfx.huh();
-  toast(`😒 ${B()}：还不回去干活？（好感 -3）`); boss.stare = 3;
+  toast(`😒 ${B()}：还不回去干活？（好感 -5）`); boss.stare = 3;
 }
 function meltdown() {
   G.melt++; G.stress = 55; sv.favor = clamp(sv.favor - 10, 0, 100); P.act = null;
@@ -910,14 +970,15 @@ function meltdown() {
 /* ---------- 一天的流程 ---------- */
 function startDay() {
   const d = day();
-  Object.assign(G, { on: true, paused: false, m: START_M, kpi: 0, stress: sv.stress, done: new Set(), caught: 0, rumors: 0, sus: 0, bell: false, melt: 0, overtime: false });
+  Object.assign(G, { chars: 0, absent: 0, on: true, paused: false, m: START_M, kpi: 0, stress: sv.stress, done: new Set(), caught: 0, rumors: 0, sus: 0, bell: false, melt: 0, overtime: false });
   const pool = TASK_POOL.slice().sort(() => Math.random() - 0.5);
   G.tasks = pool.slice(0, d.tasks);
   if (d.early) G.tasks[G.tasks.length - 1] = 'early';
-  Object.assign(boss, { node: 'S', path: [], state: 'office', t: rand(8, 14), visible: true, stare: 0, weekMeet: false, leaving: false, then: null, look: 0 });
+  Object.assign(boss, { backT: 8, turnBack: 0, node: 'S', path: [], state: 'office', t: rand(8, 14), visible: true, stare: 0, weekMeet: false, leaving: false, then: null, look: 0 });
   bossC.root.position.set(NODES.S[0], 0, NODES.S[1]); bossC.root.visible = true;
   for (const n of npcs) { n.turn = 0; n.turnT = rand(10, 18); n.cd = 0; }
-  P.act = null; sitDown(); G.view = 'fp'; applyView();
+  typer.value = ''; typedLen = 0; G.readMark = 0; last2 = ['', ''];
+  P.act = null; sitDown(); applyView();
   el('dayName').textContent = d.n; drawTasks();
   toast(`${d.n} · ${d.tip}`);
 }
@@ -934,7 +995,9 @@ function endDay(how) {
   const rows = [];
   rows.push([`🐟 摸鱼清单`, `${listDone} / ${G.tasks.length}`]);
   rows.push([`📈 KPI`, `${Math.round(G.kpi)} / ${KPI_GOAL} ${kpiOk ? '✅' : '❌'}`]);
+  rows.push([`⌨️ 周报写了`, `${G.chars} 字`]);
   rows.push([`🚨 被抓`, `${G.caught} 次`]);
+  if (G.absent) rows.push([`🪑 老板来找你时你不在`, `${G.absent} 次`]);
   let favor = 0, note = [];
   if (kpiOk) { favor += 4; } else { favor -= 12; note.push(`KPI 没达标，${B()}说明天来他办公室一趟。`); }
   if (G.rumors) { favor -= 4 * G.rumors; note.push(`八卦王把你的事传到了${B()}耳朵里（${G.rumors} 次）。`); }
@@ -976,12 +1039,21 @@ if (sv.day > 0 && sv.day < 5) el('btnStart').textContent = `继续：${DAYS[sv.d
 function tickDay(dt) {
   G.m += dt * (END_M - START_M) / DAY_SEC;
   const d = day();
-  const working = P.seated && G.view === 'fp';
-  if (working) { G.kpi = Math.min(100, G.kpi + dt * 0.55); G.stress += dt * 0.26; }
+  const working = P.seated && G.view !== 'top';
+  typeBudget = Math.min(12, typeBudget + dt * 6);
+  if (working) { G.kpi = Math.min(100, G.kpi + dt * 0.12); G.stress += dt * 0.26; }
   else G.stress += dt * 0.04;
   if (G.stress >= 100) meltdown();
   if (!G.bell && G.m >= END_M) { G.bell = true; sfx.bell(); toast('🔔 18:00 下班时间到！走到门口就能下班'); }
   if (G.m >= OVER_M) endDay('overtime');
+}
+const frus = new THREE.Frustum(), pm = new THREE.Matrix4(), bh = new THREE.Vector3();
+function bossInSight() {
+  if (!bossC.root.visible) return false;
+  bh.set(bossC.root.position.x, 1.3, bossC.root.position.z);
+  camera.updateMatrixWorld(); pm.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); frus.setFromProjectionMatrix(pm);
+  if (!frus.containsPoint(bh)) return false;
+  return lineOfSight(camera.position.x, camera.position.y, camera.position.z, bh.x, bh.y, bh.z);
 }
 function drawHud() {
   const h = Math.floor(G.m / 60), mm = Math.floor(G.m % 60);
@@ -990,8 +1062,9 @@ function drawHud() {
   el('bKpi').style.width = G.kpi + '%'; el('bKpi').style.background = G.kpi >= KPI_GOAL ? '#38c8a0' : '#7fb2ff';
   el('bStress').style.width = G.stress + '%'; el('bStress').style.background = G.stress > 80 ? '#ff5d5d' : G.stress > 50 ? '#ffb238' : '#38c8a0';
   el('bFavor').style.width = sv.favor + '%';
-  const st = { office: '在办公室里', toOffice: '回办公室', patrol: '在巡逻', meeting: '在开会 🤫', toMeeting: '去开会', investigate: '朝你这边来了！', search: '在找人', watch: '朝你走来', leaving: '要走了', gone: '下班了 🎉' }[boss.state] || '';
-  el('bossSt').textContent = `👔 ${B()}：${st}`;
+  const st = { office: '在办公室里', toOffice: '回办公室', patrol: '在巡逻', meeting: '在开会 🤫', toMeeting: '去开会', investigate: '朝你这边来了！', search: '在找人', watch: '朝你走来', leaving: '要走了', gone: '下班了 🎉', toCheck: '朝你工位走去', check: '在你工位旁边' }[boss.state] || '';
+  const known = G.view === 'top' || ['meeting', 'gone', 'leaving'].includes(boss.state) || bossInSight();
+  el('bossSt').textContent = known ? `👔 ${B()}：${st}` : `👔 ${B()}：不知道在哪… 👂 听脚步声`;
 }
 
 /* ---------- 输入 ---------- */
@@ -1001,10 +1074,12 @@ if (isTouch) document.body.classList.add('touch');
 addEventListener('keydown', e => {
   if (e.key === 'Escape') { e.preventDefault(); setBossKey(!bossKeyOn); return; }
   if (bossKeyOn) return;
+  if (e.key === 'Tab') { e.preventDefault(); if (G.on && !G.paused && P.seated) standUp(); return; }
+  if (e.target === typer) return;   // 坐在工位上时，键盘打的字都进周报
   keys.add(e.code);
   if (e.code === 'KeyE') eHeld = true;
   if (e.code === 'KeyC' && !e.repeat) P.crouch = !P.crouch;
-  if (e.code === 'KeyV' && !e.repeat && G.on) { G.view = G.view === 'fp' ? 'top' : 'fp'; applyView(); }
+  if (e.code === 'KeyV' && !e.repeat && G.on) cycleView();
 });
 addEventListener('keyup', e => { keys.delete(e.code); if (e.code === 'KeyE') eHeld = false; });
 addEventListener('blur', () => { keys.clear(); eHeld = false; });
@@ -1018,21 +1093,21 @@ function moveInput() {
 }
 // 鼠标锁定看四周；锁不上（手机、iframe）就拖动看
 let wantLock = false;
-function lock() { if (isTouch || G.view !== 'fp') return; wantLock = true; try { const p = canvas.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
+function lock() { if (isTouch || G.view === 'top') return; wantLock = true; try { const p = canvas.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
 function unlock() { wantLock = false; if (document.pointerLockElement) document.exitPointerLock(); }
-canvas.addEventListener('click', () => { if (G.on && !G.paused && G.view === 'fp' && !document.pointerLockElement) lock(); });
+canvas.addEventListener('click', () => { if (G.on && !G.paused && G.view !== 'top') { if (!document.pointerLockElement) lock(); if (P.seated) focusTyper(); } });
 let locked = false;
 document.addEventListener('pointerlockchange', () => {
   if (document.pointerLockElement === canvas) { locked = true; return; }
   // 真锁上过、又被 Esc 打断时，直接切到老板键（浏览器会吞掉锁定状态下的 Esc）
-  if (locked && wantLock && G.on && !G.paused && G.view === 'fp' && !bossKeyOn) { wantLock = false; setBossKey(true); }
+  if (locked && wantLock && G.on && !G.paused && G.view !== 'top' && !bossKeyOn) { wantLock = false; setBossKey(true); }
   locked = false;
 });
 addEventListener('mousemove', e => {
   if (document.pointerLockElement === canvas) { turnHead(e.movementX, e.movementY, 0.0022); }
 });
 function turnHead(dx, dy, s) {
-  if (G.view !== 'fp') return;
+  if (G.view === 'top') return;
   P.yaw -= dx * s; P.pitch = clamp(P.pitch - dy * s, -1.35, 1.35);
 }
 const drag = {};
@@ -1057,15 +1132,17 @@ addEventListener('pointercancel', e => { delete drag[e.pointerId]; });
 }
 
 /* ---------- 视角 ---------- */
+const VIEWS = ['fp', 'tp', 'top'];
+function cycleView() { if (!G.on) return; G.view = VIEWS[(VIEWS.indexOf(G.view) + 1) % VIEWS.length]; applyView(); }
 function applyView() {
-  const fp = G.view === 'fp';
-  controls.enabled = !fp; meC.root.visible = !fp;
-  camera.fov = fp ? 75 : 40; camera.updateProjectionMatrix();
-  el('btnView').innerHTML = fp ? '👀 第一人称 <kbd>V</kbd>' : '🗺️ 全景（你在发呆） <kbd>V</kbd>';
-  el('cross').style.display = fp ? 'block' : 'none';
-  if (fp) lock(); else { unlock(); camera.position.set(P.x * 0.3, 15, P.z * 0.3 + 12); controls.target.set(0, 0, 0.5); }
+  const top = G.view === 'top';
+  controls.enabled = top;
+    el('btnView').innerHTML = { fp: '👀 第一人称', tp: '🧍 第三人称', top: '🗺️ 全景（你在发呆）' }[G.view] + ' <kbd>V</kbd>';
+  el('cross').style.display = G.view === 'fp' ? 'block' : 'none';
+  if (!top) { lock(); if (P.seated && !isTouch) focusTyper(); }
+  else { unlock(); typer.blur(); camera.position.set(P.x * 0.3, 15, P.z * 0.3 + 12); controls.target.set(0, 0, 0.5); }
 }
-el('btnView').addEventListener('click', () => { if (G.on) { G.view = G.view === 'fp' ? 'top' : 'fp'; applyView(); } });
+el('btnView').addEventListener('click', cycleView);
 const drawSound = () => { el('btnSound').textContent = muted ? '🔇 静音' : '🔊 声音'; };
 el('btnSound').addEventListener('click', () => { muted = !muted; sv.muted = muted; persist(); drawSound(); }); drawSound();
 el('btnKey').addEventListener('click', () => setBossKey(true));
@@ -1097,16 +1174,30 @@ el('bk').addEventListener('click', () => setBossKey(false));
 let toastT = 0, shake = 0;
 function toast(txt) { el('toast').textContent = txt; el('toast').style.opacity = 1; toastT = 3.2; }
 function flash() { const f = el('flash'); f.style.transition = 'none'; f.style.opacity = 0.9; requestAnimationFrame(() => requestAnimationFrame(() => { f.style.transition = 'opacity .7s'; f.style.opacity = 0; })); }
-const scrCv = document.createElement('canvas'); scrCv.width = 256; scrCv.height = 150;
+const scrCv = document.createElement('canvas'); scrCv.width = 512; scrCv.height = 292;
 const scrTex = new THREE.CanvasTexture(scrCv); scrTex.colorSpace = THREE.SRGBColorSpace;
 screens[0].material = new THREE.MeshBasicMaterial({ map: scrTex });
-const CODE = ['function work(day) {', '  const tasks = load(day);', '  for (const t of tasks) {', '    if (t.done) continue;', '    t.progress += effort;', '  }', '  return report(tasks);', '}'];
 function drawMyScreen() {
-  const g = scrCv.getContext('2d'); g.fillStyle = '#0f1a2e'; g.fillRect(0, 0, 256, 150);
-  g.font = '12px monospace'; g.fillStyle = '#9fd0ff';
-  const n = Math.floor(G.kpi * 3) % 60; let left = n * 6;
-  CODE.forEach((l, i) => { const s = l.slice(0, Math.max(0, Math.min(l.length, left))); left -= l.length; g.fillText(s, 10, 22 + i * 14); });
-  g.fillStyle = '#38c8a0'; g.fillRect(10, 134, 236 * G.kpi / 100, 6); g.fillStyle = 'rgba(255,255,255,.3)'; g.fillRect(10 + 236 * KPI_GOAL / 100, 130, 2, 14);
+  const g = scrCv.getContext('2d'), W2 = 512, H2 = 292;
+  g.fillStyle = '#ffffff'; g.fillRect(0, 0, W2, H2);
+  g.fillStyle = '#2b579a'; g.fillRect(0, 0, W2, 30);
+  g.fillStyle = '#fff'; g.font = '600 15px "Microsoft YaHei",sans-serif'; g.textBaseline = 'middle';
+  g.fillText(`📝 ${day().n}工作周报.docx`, 12, 15); g.textAlign = 'right'; g.fillText(`${G.chars} 字`, W2 - 12, 15); g.textAlign = 'left';
+  const F = '20px "Microsoft YaHei","PingFang SC",monospace'; g.font = F; g.textBaseline = 'alphabetic';
+  const raw = typer.value, lines = [];
+  for (const para of raw.split('\n')) {
+    let cur = '';
+    for (const ch of para) { if (g.measureText(cur + ch).width > W2 - 32) { lines.push(cur); cur = ''; } cur += ch; }
+    lines.push(cur);
+  }
+  const show = lines.slice(-9), focused = document.activeElement === typer && P.seated;
+  if (!raw) { g.fillStyle = '#9aa4b8'; g.fillText(P.seated ? '直接打字吧，打字就是在工作…' : '（坐下来就能写）', 16, 62); }
+  g.fillStyle = '#1d2a44';
+  show.forEach((l, i) => g.fillText(l, 16, 62 + i * 26));
+  if (focused && Math.floor(performance.now() / 500) % 2) { const last = show[show.length - 1] || ''; g.fillRect(16 + g.measureText(last).width + 2, 62 + (show.length - 1) * 26 - 18, 2, 22); }
+  g.fillStyle = '#e6ebf2'; g.fillRect(12, H2 - 16, W2 - 24, 6);
+  g.fillStyle = G.kpi >= KPI_GOAL ? '#38c8a0' : '#7fb2ff'; g.fillRect(12, H2 - 16, (W2 - 24) * G.kpi / 100, 6);
+  g.fillStyle = '#16324a'; g.fillRect(12 + (W2 - 24) * KPI_GOAL / 100, H2 - 20, 2, 14);
   scrTex.needsUpdate = true;
 }
 function drawArc(t) {
@@ -1116,7 +1207,7 @@ function drawArc(t) {
 }
 
 /* ---------- 主循环 ---------- */
-const clock = new THREE.Clock();
+const clock = new THREE.Clock(), tpT = new THREE.Vector3(), tpD = new THREE.Vector3(), camBlock = blockers.concat(outerWalls);
 let hudT = 0, scrT = 0, simDt = 0;
 function frame() {
   const dt = simDt || Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
@@ -1132,19 +1223,36 @@ function frame() {
   bossCone.visible = bossC.root.visible && boss.state !== 'gone';
   bossCone.position.set(bossC.root.position.x, 0.03, bossC.root.position.z); bossCone.rotation.y = bossFacing();
   // 我自己（全景里看到的样子）
-  meC.root.position.set(P.x, 0, P.z); meC.rot = P.yaw + Math.PI;
-  meC.mode = P.seated ? 'sit' : P.act && P.act.id === 'sofa' ? 'lie' : P.crouch ? 'crouch' : 'stand';
-  meC.moving = P.moving; meC.typing = P.seated; meC.root.visible = G.view !== 'fp' && !P.hidden; tickChar(meC, dt, t);
-  // 镜头
+  const lying = P.act && P.act.id === 'sofa', av = P.act && SPOTS[P.act.id].view;
+  meC.root.position.set(lying ? -0.95 : P.x, lying ? 0.42 : 0, lying ? 5.3 : P.z);
+  meC.rot = P.seated ? Math.PI : lying ? Math.PI / 2 : av ? av.yaw + Math.PI : P.yaw + Math.PI;   // 躺下时顺着沙发，头朝西
+  meC.mode = P.seated ? 'sit' : lying ? 'lie' : P.crouch ? 'crouch' : 'stand';
+  meC.moving = P.moving; meC.typing = P.seated && tapT > 0; meC.root.visible = G.view !== 'fp' && !P.hidden; tickChar(meC, dt, t);
+  if (tapT > 0) tapT -= dt;
+  // 坐着时让输入框一直拿着焦点（电脑上）
+  if (live && P.seated && G.view !== 'top' && !isTouch && document.activeElement !== typer) focusTyper();
+  // 镜头（第一人称坐着打字时稍微拉近，看得清屏幕）
+  const fov = G.view === 'fp' ? (P.seated ? 56 : 75) : G.view === 'top' ? 40 : 65;
+  if (camera.fov !== fov) { camera.fov = lerp(camera.fov, fov, Math.min(1, dt * 6)); if (Math.abs(camera.fov - fov) < 0.2) camera.fov = fov; camera.updateProjectionMatrix(); }
   if (G.view === 'fp') {
     let yaw = P.yaw, pitch = P.pitch;
     const v = P.act && SPOTS[P.act.id].view;
     if (v) { yaw = v.yaw + clamp(angDiff(P.yaw, v.yaw), -0.6, 0.6); pitch = v.pitch; }
     camera.position.set(P.x + (shake > 0 ? rand(-1, 1) * shake * 0.05 : 0), P.eyeY + (P.moving ? Math.abs(Math.sin(P.stepPh)) * 0.03 : 0), P.z);
     camera.rotation.set(pitch, yaw, 0);
+  } else if (G.view === 'tp') {
+    // 第三人称：镜头在身后上方，鼠标转方向，上下看会把镜头抬高压低；撞墙就拉近
+    const ty = P.seated ? 1.05 : lying ? 0.9 : P.crouch ? 0.8 : 1.3, a = clamp(0.32 - P.pitch * 0.9, -0.15, 1.25);
+    tpT.set(lying ? -1.6 : P.x, ty, lying ? 5.3 : P.z);
+    tpD.set(Math.sin(P.yaw) * Math.cos(a), Math.sin(a), Math.cos(P.yaw) * Math.cos(a));
+    let dist = 2.9;
+    ray.set(tpT, tpD); ray.far = dist;
+    const hit = ray.intersectObjects(camBlock, false)[0]; if (hit) dist = Math.max(0.5, hit.distance - 0.2);
+    camera.position.copy(tpT).addScaledVector(tpD, dist);
+    camera.lookAt(tpT.x, tpT.y + 0.15, tpT.z);
   } else controls.update();
   if (shake > 0) shake -= dt;
-  scrT += dt; if (scrT > 0.15) { scrT = 0; drawMyScreen(); drawArc(t); }
+  scrT += dt; if (scrT > 0.1) { scrT = 0; drawMyScreen(); drawArc(t); }
   hudT += dt; if (hudT > 0.15) { hudT = 0; drawHud(); }
   if (toastT > 0) { toastT -= dt; if (toastT <= 0) el('toast').style.opacity = 0; }
   if (simDt) return;   // 测试快进时不画
