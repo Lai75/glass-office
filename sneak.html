@@ -647,12 +647,12 @@ function collide(x, z, r = 0.24) {
 const SPOTS = {
   desk: { x: -5.6, z: 2.1, r: 0.9, label: '坐下工作' },
   sofa: { x: -1.6, z: 4.55, r: 1.0, label: '躺沙发睡一觉', hold: 7, relief: 25, task: '在沙发上睡一觉', view: { y: 0.62, yaw: 0, pitch: 0.12 }, low: true, doze: true },
-  arcade: { x: 6.55, z: 4.6, r: 0.9, label: '打一局街机', hold: 8, relief: 20, task: '打一局街机', view: { y: 1.12, yaw: -Math.PI / 2, pitch: -0.05 } },
-  tea: { x: 6.85, z: 1.5, r: 0.9, label: '泡杯茶慢慢喝', hold: 5, relief: 12, task: '去茶水间泡杯茶', view: { y: 1.12, yaw: -Math.PI / 2, pitch: -0.35 } },
-  milk: { x: -1.5, z: 3.25, r: 0.75, label: '偷喝摸鱼搭子的奶茶', hold: 4, relief: 10, task: '偷喝摸鱼搭子的奶茶', view: { y: 0.8, yaw: 0, pitch: -0.4 }, low: true },
-  toilet: { x: -6.7, z: 4.5, r: 0.9, label: '带薪上厕所（里面谁也看不到）', hold: 12, relief: 15, task: '带薪上厕所', hide: true },
-  window: { x: 0.5, z: -2.3, r: 0.9, label: '在窗边看风景发呆', hold: 6, relief: 12, task: '在落地窗边发呆', view: { y: 1.12, yaw: 0, pitch: 0.05 } },
-  chair: { x: 6.5, z: -5.0, r: 0.8, label: `坐一下${B()}的椅子`, hold: 5, relief: 18, task: `偷坐${B()}的老板椅`, view: { y: 1.0, yaw: Math.PI, pitch: -0.1 } },
+  arcade: { x: 6.55, z: 4.6, r: 0.9, label: '打一局街机', hold: 6, relief: 20, task: '打一局街机', view: { y: 1.12, yaw: -Math.PI / 2, pitch: -0.05 } },
+  tea: { x: 6.85, z: 1.5, r: 0.9, label: '泡杯茶慢慢喝', hold: 4, relief: 12, task: '去茶水间泡杯茶', view: { y: 1.12, yaw: -Math.PI / 2, pitch: -0.35 } },
+  milk: { x: -1.5, z: 3.25, r: 0.75, label: '偷喝摸鱼搭子的奶茶', hold: 3, relief: 10, task: '偷喝摸鱼搭子的奶茶', view: { y: 0.8, yaw: 0, pitch: -0.4 }, low: true },
+  toilet: { x: -6.7, z: 4.5, r: 0.9, label: '带薪上厕所（里面谁也看不到）', hold: 9, relief: 15, task: '带薪上厕所', hide: true },
+  window: { x: 0.5, z: -2.3, r: 0.9, label: '在窗边看风景发呆', hold: 5, relief: 12, task: '在落地窗边发呆', view: { y: 1.12, yaw: 0, pitch: 0.05 } },
+  chair: { x: 6.5, z: -5.0, r: 0.8, label: `坐一下${B()}的椅子`, hold: 4, relief: 18, task: `偷坐${B()}的老板椅`, view: { y: 1.0, yaw: Math.PI, pitch: -0.1 } },
   exit: { x: 1.7, z: 5.35, r: 0.9, label: '推门下班', hold: 1.2 },
 };
 // 沙发、奶茶、老板椅在全景时换个可交互的位置判断
